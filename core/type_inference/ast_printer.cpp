@@ -17,235 +17,278 @@
 #include "parser.h"
 
 // Overloading '<<' for AST and its nodes
-
-std::ostream &operator<<(std::ostream &out, Conditional *ast) {
-  out << "ast.Conditional(";
-  out << ast->cond;
-  out << ",";
-  out << ast->branchTrue;
-  out << ",";
-  out << ast->branchFalse;
-  out << ")";
-  return out;
+std::ostream &operator<<(std::ostream &out, Apply *ast)
+{
+    out << "ast.Apply(";
+    out << ast->target;
+    for (ArgParam &arg : ast->args) {
+        out << ", ";
+        out << arg.expr;
+    }
+    out << ")";
+    return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Apply *ast) {
-  out << "ast.Apply(";
-  out << ast->target;
-  for (ArgParam &arg : ast->args) {
-    out << ", ";
-    out << arg.expr;
-  }
-  out << ")";
-  return out;
+std::ostream &operator<<(std::ostream &out, Array *ast)
+{
+    out << "ast.Array([";
+    for (auto &el : ast->elements) {
+        out << el.expr;
+        out << ",";
+    }
+    out << "])";
+    return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Array *ast) {
-  out << "ast.Array(";
-  for (auto &el : ast->elements) {
-    out << el.expr;
+std::ostream &operator<<(std::ostream &out, Binary *ast)
+{
+    out << "ast.BinaryOp(";
+    out << bop_string(ast->op);
     out << ",";
-  }
-  out << ")";
-  return out;
+    out << ast->left;
+    out << ",";
+    out << ast->right;
+    out << ")";
+    return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Binary *ast) {
-  out << "ast.BinaryOp(";
-  out << bop_string(ast->op);
-  out << ",";
-  out << ast->left;
-  out << ",";
-  out << ast->right;
-  out << ")";
-  return out;
+std::ostream &operator<<(std::ostream &out, BuiltinFunction *ast)
+{
+    out << "ast.BuiltInFunction(";
+    out << ast->name;
+    for (auto param : ast->params) {
+        out << ",";
+        out << param;
+    }
+    out << ")";
+    return out;
 }
 
-std::ostream &operator<<(std::ostream &out, AST *ast_) {
-  if (auto *ast = dynamic_cast<Apply *>(ast_)) {
-    out << ast;
+std::ostream &operator<<(std::ostream &out, Function *ast)
+{
+    out << "ast.Function(";
+    for (auto arg_param : ast->params) {
+        out << arg_param.id;
+        out << " ";
+        out << arg_param.expr;
+        out << ",";
+    }
+    out << ")";
+    out << ast->body;
+    return out;
+}
 
-  } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
-    // nothing here
-  } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
-    out << ast;
+std::ostream &operator<<(std::ostream &out, Conditional *ast)
+{
+    out << "ast.Conditional(";
+    out << ast->cond;
+    out << ",";
+    out << ast->branchTrue;
+    out << ",";
+    out << ast->branchFalse;
+    out << ")";
+    return out;
+}
 
-  } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
-    // ArrayComprehension is desugared and doesn't exist in core AST
+std::ostream &operator<<(std::ostream &out, Error *ast)
+{
+    out << "ast.Error(";
+    out << ast->expr;
+    out << ")";
+    return out;
+}
 
-  } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
-    //   } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
-    //     out << ast;
+std::ostream &operator<<(std::ostream &out, Import *ast)
+{
+    out << "ast.Import(";
+    out << ast->file;
+    out << ")";
+    return out;
+}
 
-    //   } else if (dynamic_cast<const BuiltinFunction *>(ast_)) {
-    //     // Nothing to do.
+std::ostream &operator<<(std::ostream &out, Local *ast)
+{
+    // it should be changed most probably
+    out << "ast.Local(";
+    // out << ast->body;
+    for (auto bind : ast->binds) {
+        out << ',';
+        out << bind.var;
+        out << ": ";
+        // out << bind.body;
+    }
+    out << ")";
+    return out;
+}
 
-    //   } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
-    //       out << ast;
-
-    //   } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
-    //     if (obj_level == 0) {
-    //       throw StaticError(ast->location, "No top-level object found.");
-    //     }
-    //     ast_ = var(id(U"$"));
-
-    //   } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
-    //     desugar(ast->expr, obj_level);
-
-    //   } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
-    //     desugar(ast->body, obj_level);
-    //     desugarParams(ast->params, obj_level);
-
-    //   } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
-    //     // TODO(dcunnin): Abstract this into a template function if it
-    //     becomes more
-    //     // common.
-    //     AST *file = ast->file;
-    //     desugar(file, obj_level);
-    //     ast->file = dynamic_cast<LiteralString *>(file);
-
-    //   } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
-    //     // TODO(dcunnin): Abstract this into a template function if it
-    //     becomes more
-    //     // common.
-    //     AST *file = ast->file;
-    //     desugar(file, obj_level);
-    //     ast->file = dynamic_cast<LiteralString *>(file);
-
-    //   } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
-    //     desugar(ast->element, obj_level);
-
-    //   } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
-    //     desugar(ast->target, obj_level);
-    //     if (ast->isSlice) {
-    //       if (ast->index == nullptr) ast->index = null();
-    //       desugar(ast->index, obj_level);
-
-    //       if (ast->end == nullptr) ast->end = null();
-    //       desugar(ast->end, obj_level);
-
-    //       if (ast->step == nullptr) ast->step = null();
-    //       desugar(ast->step, obj_level);
-
-    //       ast_ = make<Apply>(ast->location, EF,
-    //                          make<Index>(E, EF, std(), EF, false,
-    //                          str(U"slice"), EF,
-    //                                      nullptr, EF, nullptr, EF),
-    //                          EF,
-    //                          ArgParams{
-    //                              {ast->target, EF},
-    //                              {ast->index, EF},
-    //                              {ast->end, EF},
-    //                              {ast->step, EF},
-    //                          },
-    //                          false,  // trailing comma
-    //                          EF, EF,
-    //                          false  // tailstrict
-    //       );
-    //     } else {
-    //       if (ast->id != nullptr) {
-    //         assert(ast->index == nullptr);
-    //         ast->index = str(ast->id->name);
-    //         ast->id = nullptr;
-    //       }
-    //       desugar(ast->index, obj_level);
-    //     }
-
-    //   } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
-    //     for (auto &bind : ast->binds) desugar(bind.body, obj_level);
-    //     desugar(ast->body, obj_level);
-
-    //     for (auto &bind : ast->binds) {
-    //       if (bind.functionSugar) {
-    //         desugarParams(bind.params, obj_level);
-    //         bind.body = make<Function>(ast->location, ast->openFodder,
-    //                                    bind.parenLeftFodder, bind.params,
-    //                                    false, bind.parenRightFodder,
-    //                                    bind.body);
-    //         bind.functionSugar = false;
-    //         bind.params.clear();
-    //       }
-    //     }
-
-  } else if (auto *ast = dynamic_cast<const LiteralBoolean *>(ast_)) {
+std::ostream &operator<<(std::ostream &out, LiteralBoolean *ast)
+{
+    out << "ast.LiteralBoolean(";
     out << ast->value;
+    out << ")";
+    return out;
+}
 
-  } else if (dynamic_cast<const LiteralNumber *>(ast_)) {
+std::ostream &operator<<(std::ostream &out, LiteralNumber *ast)
+{
+    out << "ast.LiteralNumber(";
     out << ast->value;
+    out << ")";
+    return out;
+}
 
-  } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
-    // if ((ast->tokenKind != LiteralString::BLOCK) &&
-    //     (ast->tokenKind != LiteralString::VERBATIM_DOUBLE) &&
-    //     (ast->tokenKind != LiteralString::VERBATIM_SINGLE)) {
-    //   ast->value = jsonnet_string_unescape(ast->location, ast->value);
-    // }
-    // ast->tokenKind = LiteralString::DOUBLE;
-    // ast->blockIndent.clear();
+std::ostream &operator<<(std::ostream &out, LiteralString *ast)
+{
+    out << "ast.LiteralString(";
+    out << ast->value.c_str();
+    out << ")";
+    return out;
+}
 
-  } else if (auto *ast = dynamic_cast<const LiteralNull *>(ast_)) {
-    out << "ast.Null";
+std::ostream &operator<<(std::ostream &out, DesugaredObject *ast)
+{
+    // - maybe it is better to overload operator for Field structure
+    // - maybe we will need hide field to kepp info about inheritance
+    out << "ast.Object({";
+    for (auto field : ast->fields) {
+        out << field.name;
+        out << ": ";
+        out << field.body;
+        out << ",";
+    }
+    out << "})";
+    return out;
+}
 
-    //   } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
-    //     for (auto &field : ast->fields) {
-    //       desugar(field.name, obj_level);
-    //       desugar(field.body, obj_level + 1);
-    //     }
-    //     for (AST *assert : ast->asserts) {
-    //       desugar(assert, obj_level + 1);
-    //     }
+std::ostream &operator<<(std::ostream &out, Unary *ast)
+{
+    out << "ast.Unary(";
+    out << uop_string(ast->op);
+    out << ",";
+    out << ast->expr;
+    out << ")";
+    return out;
+}
 
-    //   } else if (auto *ast = dynamic_cast<Object *>(ast_)) {
-    //     ast_ = makeObject(ast, obj_level);
-
-    //   } else if (auto *ast = dynamic_cast<ObjectComprehension *>(ast_)) {
-    //     ast_ = makeObjectComprehension(ast, obj_level);
-
-    //   } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_))
-    //   {
-    //     desugar(ast->field, obj_level);
-    //     desugar(ast->value, obj_level + 1);
-    //     desugar(ast->array, obj_level);
-
-    //   } else if (auto *ast = dynamic_cast<Parens *>(ast_)) {
-    //     // Strip parens.
-    //     desugar(ast->expr, obj_level);
-    //     ast_ = ast->expr;
-
-    //   } else if (dynamic_cast<const Self *>(ast_)) {
-    //     // Nothing to do.
-
-    //   } else if (auto *ast = dynamic_cast<SuperIndex *>(ast_)) {
-    //     if (ast->id != nullptr) {
-    //       assert(ast->index == nullptr);
-    //       ast->index = str(ast->id->name);
-    //       ast->id = nullptr;
-    //     }
-    //     desugar(ast->index, obj_level);
-
-  } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
-    // desugar(ast->expr, obj_level);
-
-  } else if (auto *ast = dynamic_cast<const Var *>(ast_)) {
-    out << "Var(";
+std::ostream &operator<<(std::ostream &out, Var *ast)
+{
+    out << "ast.Var(";
     out << ast->id;
     out << ")";
-
-  } else {
-    out << "INTERNAL ERROR: Unknown AST: " << std::endl;
-    std::abort();
-  }
-  return out;
+    return out;
 }
 
-int main(int argc, char const *argv[]) {
-  const char *str = "2+3";
+// keep empty cases for desugared nodes or just delete them ?
+std::ostream &operator<<(std::ostream &out, AST *ast_)
+{
+    out << ASTTypeToString(ast_->type) << " : ";
+    if (auto *ast = dynamic_cast<Apply *>(ast_)) {
+        out << ast;
 
-  Allocator *alloc = new Allocator();
-  Tokens tokens = jsonnet_lex("add_op", str);
-  AST *ast = jsonnet_parse(alloc, tokens);
+    } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
+        // nothing here
 
-  Allocator *alloc1 = new Allocator();
-  jsonnet_desugar(alloc1, ast, nullptr);
-  std::cout << ast;
-  return 0;
+    } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
+        // ArrayComprehension is desugared and doesn't exist in core AST
+
+    } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<const BuiltinFunction *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
+        // $ is desugared and is not a keyword in core AST
+    } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
+        out << ast;
+    } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
+        // not implemented
+
+    } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
+        // not implemented
+
+    } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
+        // slices are desugared, how to deal with other cases?
+    } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
+        // object-level local is desugared;
+        // the definition of Local is not completely clear for me: body vs binds?
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<const LiteralBoolean *>(ast_)) {
+        out << ast;
+
+    } else if (dynamic_cast<const LiteralNumber *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
+        out << ast;
+
+    } else if (dynamic_cast<const LiteralNull *>(ast_)) {
+        out << "ast.Null";
+
+    } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
+        // object after desugaring that doesn't contain object-level locals, assert
+        out << ast;
+
+    } else if (dynamic_cast<Object *>(ast_)) {
+        // desugared to DesugaredObject
+    } else if (dynamic_cast<ObjectComprehension *>(ast_)) {
+        // is desugared to simple ObjectComprehension
+    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
+        // not implemented yet
+    } else if (dynamic_cast<Parens *>(ast_)) {
+        // is desugared
+    } else if (dynamic_cast<const Self *>(ast_)) {
+        // Nothing to do.
+    } else if (auto *ast = dynamic_cast<SuperIndex *>(ast_)) {
+        // not implemented, but after desugaring id field will be set to nullptr
+    } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
+        out << ast;
+    } else if (auto *ast = dynamic_cast<const Var *>(ast_)) {
+        out << ast;
+    } else {
+        out << "INTERNAL ERROR: Unknown AST: " << std::endl;
+        std::abort();
+    }
+    out << std::endl;
+    return out;
+}
+
+int main(int argc, char const *argv[])
+{
+    const char *str = "{a: if true then 1 else 0,}"; // don't understand why AST for consitional is ast.Local ...
+
+    Allocator *alloc = new Allocator();
+    Tokens tokens = jsonnet_lex("add_op", str);
+    
+    // print lexer tokens
+    std::cout << "Tokens:\n";
+    for (auto t : tokens) {
+      std::cout << t << ", ";
+    }
+    std::cout << std::endl;
+
+    AST *ast = jsonnet_parse(alloc, tokens);
+    // Allocator *alloc1 = new Allocator();
+    jsonnet_desugar(alloc, ast, nullptr);
+
+    // print AST
+    std::cout << "AST nodes:\n";
+    std::cout << ast;
+    std::cout << std::endl;
+
+    return 0;
 }
