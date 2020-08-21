@@ -7,13 +7,13 @@ def read_ast(filename):
     return ast
 
 
-def parse_ast(ast):
-    return eval(ast)
+def parse_ast(ast_str):
+    return eval(ast_str)
 
 
 if __name__ == "__main__":
-    ast = read_ast("core/type_inference/ast_string.txt")
-    print(ast)
-    ast = parse_ast(ast)
+    ast_str = read_ast("core/type_inference/ast_string.txt")
+    print(f"AST: {ast_str}")
+    ast = parse_ast(ast_str)
     print(ast)
 
