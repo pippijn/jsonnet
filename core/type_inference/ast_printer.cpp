@@ -5,7 +5,6 @@
 // ast.Conditional(
 // ast.BinaryOp("==", ast.Integer("2"), ast.Integer("3")),
 // …,
-// …) <-
 
 #include <iostream>
 #include <ostream>
@@ -16,12 +15,21 @@
 #include "lexer.h"
 #include "parser.h"
 
+std::ostream &operator<<(std::ostream &out, const AST *ast_);
+
+std::ostream &operator<<(std::ostream &out, const LiteralNumber *ast)
+{
+    out << "ast.LiteralNumber(";
+    out << ast->value;
+    out << ")";
+    return out;
+}
 // Overloading '<<' for AST and its nodes
-std::ostream &operator<<(std::ostream &out, Apply *ast)
+std::ostream &operator<<(std::ostream &out, const Apply *ast)
 {
     out << "ast.Apply(";
     out << ast->target;
-    for (ArgParam &arg : ast->args) {
+    for (ArgParam arg : ast->args) {
         out << ", ";
         out << arg.expr;
     }
@@ -29,7 +37,7 @@ std::ostream &operator<<(std::ostream &out, Apply *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Array *ast)
+std::ostream &operator<<(std::ostream &out, const Array *ast)
 {
     out << "ast.Array([";
     for (auto &el : ast->elements) {
@@ -40,7 +48,7 @@ std::ostream &operator<<(std::ostream &out, Array *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Binary *ast)
+std::ostream &operator<<(std::ostream &out, const Binary *ast)
 {
     out << "ast.BinaryOp(";
     out << bop_string(ast->op);
@@ -52,7 +60,7 @@ std::ostream &operator<<(std::ostream &out, Binary *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, BuiltinFunction *ast)
+std::ostream &operator<<(std::ostream &out, const BuiltinFunction *ast)
 {
     out << "ast.BuiltInFunction(";
     out << ast->name;
@@ -64,7 +72,7 @@ std::ostream &operator<<(std::ostream &out, BuiltinFunction *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Function *ast)
+std::ostream &operator<<(std::ostream &out, const Function *ast)
 {
     out << "ast.Function(";
     for (auto arg_param : ast->params) {
@@ -78,19 +86,19 @@ std::ostream &operator<<(std::ostream &out, Function *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Conditional *ast)
+std::ostream &operator<<(std::ostream &out, const Conditional *ast)
 {
     out << "ast.Conditional(";
     out << ast->cond;
-    out << ",";
+    out << ", ";
     out << ast->branchTrue;
-    out << ",";
+    out << ", ";
     out << ast->branchFalse;
     out << ")";
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Error *ast)
+std::ostream &operator<<(std::ostream &out, const Error *ast)
 {
     out << "ast.Error(";
     out << ast->expr;
@@ -98,7 +106,7 @@ std::ostream &operator<<(std::ostream &out, Error *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Import *ast)
+std::ostream &operator<<(std::ostream &out, const Import *ast)
 {
     out << "ast.Import(";
     out << ast->file;
@@ -106,22 +114,22 @@ std::ostream &operator<<(std::ostream &out, Import *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Local *ast)
+std::ostream &operator<<(std::ostream &out, const Local *ast)
 {
     // it should be changed most probably
     out << "ast.Local(";
-    // out << ast->body;
+    out << ast->body;
     for (auto bind : ast->binds) {
         out << ',';
         out << bind.var;
         out << ": ";
-        // out << bind.body;
+        out << bind.body;
     }
     out << ")";
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, LiteralBoolean *ast)
+std::ostream &operator<<(std::ostream &out, const LiteralBoolean *ast)
 {
     out << "ast.LiteralBoolean(";
     out << ast->value;
@@ -129,25 +137,18 @@ std::ostream &operator<<(std::ostream &out, LiteralBoolean *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, LiteralNumber *ast)
-{
-    out << "ast.LiteralNumber(";
-    out << ast->value;
-    out << ")";
-    return out;
-}
-
-std::ostream &operator<<(std::ostream &out, LiteralString *ast)
+std::ostream &operator<<(std::ostream &out, const LiteralString *ast)
 {
     out << "ast.LiteralString(";
-    out << ast->value.c_str();
+    // TODO: find a better way to print UString
+    for (const auto& c: ast->value) out << static_cast<char>(c);
     out << ")";
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, DesugaredObject *ast)
+std::ostream &operator<<(std::ostream &out, const DesugaredObject *ast)
 {
-    // - maybe it is better to overload operator for Field structure
+    // - maybe it is better to overload operator << for Field structure
     // - maybe we will need hide field to kepp info about inheritance
     out << "ast.Object({";
     for (auto field : ast->fields) {
@@ -179,50 +180,51 @@ std::ostream &operator<<(std::ostream &out, Var *ast)
 }
 
 // keep empty cases for desugared nodes or just delete them ?
-std::ostream &operator<<(std::ostream &out, AST *ast_)
+std::ostream &operator<<(std::ostream &out, const AST *ast_)
 {
-    out << ASTTypeToString(ast_->type) << " : ";
-    if (auto *ast = dynamic_cast<Apply *>(ast_)) {
+    // std::cout << ASTTypeToString(ast_->type) << " : ";
+    if (auto *ast = dynamic_cast<const Apply *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<ApplyBrace *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const ApplyBrace *>(ast_)) {
         // nothing here
 
-    } else if (auto *ast = dynamic_cast<Array *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Array *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<ArrayComprehension *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const ArrayComprehension *>(ast_)) {
         // ArrayComprehension is desugared and doesn't exist in core AST
 
-    } else if (auto *ast = dynamic_cast<Assert *>(ast_)) {
-    } else if (auto *ast = dynamic_cast<Binary *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Assert *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Binary *>(ast_)) {
         out << ast;
 
     } else if (auto *ast = dynamic_cast<const BuiltinFunction *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<Conditional *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Conditional *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Dollar *>(ast_)) {
         // $ is desugared and is not a keyword in core AST
-    } else if (auto *ast = dynamic_cast<Error *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Error *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<Function *>(ast_)) {
-        out << ast;
-    } else if (auto *ast = dynamic_cast<Import *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Function *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<Importstr *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Import *>(ast_)) {
+        out << ast;
+
+    } else if (auto *ast = dynamic_cast<const Importstr *>(ast_)) {
         // not implemented
 
-    } else if (auto *ast = dynamic_cast<InSuper *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const InSuper *>(ast_)) {
         // not implemented
 
-    } else if (auto *ast = dynamic_cast<Index *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Index *>(ast_)) {
         // slices are desugared, how to deal with other cases?
-    } else if (auto *ast = dynamic_cast<Local *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Local *>(ast_)) {
         // object-level local is desugared;
         // the definition of Local is not completely clear for me: body vs binds?
         out << ast;
@@ -230,32 +232,32 @@ std::ostream &operator<<(std::ostream &out, AST *ast_)
     } else if (auto *ast = dynamic_cast<const LiteralBoolean *>(ast_)) {
         out << ast;
 
-    } else if (dynamic_cast<const LiteralNumber *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const LiteralNumber *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<LiteralString *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const LiteralString *>(ast_)) {
         out << ast;
 
     } else if (dynamic_cast<const LiteralNull *>(ast_)) {
         out << "ast.Null";
 
-    } else if (auto *ast = dynamic_cast<DesugaredObject *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const DesugaredObject *>(ast_)) {
         // object after desugaring that doesn't contain object-level locals, assert
         out << ast;
 
-    } else if (dynamic_cast<Object *>(ast_)) {
+    } else if (dynamic_cast<const Object *>(ast_)) {
         // desugared to DesugaredObject
-    } else if (dynamic_cast<ObjectComprehension *>(ast_)) {
+    } else if (dynamic_cast<const ObjectComprehension *>(ast_)) {
         // is desugared to simple ObjectComprehension
-    } else if (auto *ast = dynamic_cast<ObjectComprehensionSimple *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const ObjectComprehensionSimple *>(ast_)) {
         // not implemented yet
-    } else if (dynamic_cast<Parens *>(ast_)) {
+    } else if (dynamic_cast<const Parens *>(ast_)) {
         // is desugared
     } else if (dynamic_cast<const Self *>(ast_)) {
         // Nothing to do.
-    } else if (auto *ast = dynamic_cast<SuperIndex *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const SuperIndex *>(ast_)) {
         // not implemented, but after desugaring id field will be set to nullptr
-    } else if (auto *ast = dynamic_cast<Unary *>(ast_)) {
+    } else if (auto *ast = dynamic_cast<const Unary *>(ast_)) {
         out << ast;
     } else if (auto *ast = dynamic_cast<const Var *>(ast_)) {
         out << ast;
@@ -263,26 +265,28 @@ std::ostream &operator<<(std::ostream &out, AST *ast_)
         out << "INTERNAL ERROR: Unknown AST: " << std::endl;
         std::abort();
     }
-    out << std::endl;
     return out;
+}
+
+void print_tokens(Tokens tokens)
+{
+    std::cout << "Tokens:\n";
+    for (auto t : tokens) {
+        std::cout << t << ", ";
+    }
+    std::cout << std::endl;
 }
 
 int main(int argc, char const *argv[])
 {
-    const char *str = "{a: if true then 1 else 0,}"; // don't understand why AST for consitional is ast.Local ...
+    const char *str = "if 2 == 3 then \"magic\" else 0";
 
     Allocator *alloc = new Allocator();
-    Tokens tokens = jsonnet_lex("add_op", str);
-    
-    // print lexer tokens
-    std::cout << "Tokens:\n";
-    for (auto t : tokens) {
-      std::cout << t << ", ";
-    }
-    std::cout << std::endl;
+    Tokens tokens = jsonnet_lex("file", str);
 
     AST *ast = jsonnet_parse(alloc, tokens);
-    // Allocator *alloc1 = new Allocator();
+
+    // doesn't work properly with desugaring
     jsonnet_desugar(alloc, ast, nullptr);
 
     // print AST
