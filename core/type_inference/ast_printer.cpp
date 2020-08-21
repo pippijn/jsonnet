@@ -54,7 +54,7 @@ std::ostream &operator<<(std::ostream &out, const Array *ast)
 std::ostream &operator<<(std::ostream &out, const Binary *ast)
 {
     out << "ast.BinaryOp(";
-    out << bop_string(ast->op);  // maybe overload for each binary op.
+    out << "\"" << bop_string(ast->op) << "\"";  // maybe overload for each binary op.
     out << ",";
     out << ast->left;
     out << ",";
@@ -168,7 +168,7 @@ std::ostream &operator<<(std::ostream &out, const DesugaredObject *ast)
 std::ostream &operator<<(std::ostream &out, Unary *ast)
 {
     out << "ast.Unary(";
-    out << uop_string(ast->op);
+    out << "\"" << uop_string(ast->op) << "\"";
     out << ",";
     out << ast->expr;
     out << ")";
