@@ -8,12 +8,15 @@
 
 #include <iostream>
 #include <ostream>
+#include <fstream>
 #include <string>
 
 #include "./ast.h"
 #include "desugarer.h"
 #include "lexer.h"
 #include "parser.h"
+
+const bool test_mode = true;
 
 std::ostream &operator<<(std::ostream &out, const AST *ast_);
 
@@ -51,7 +54,7 @@ std::ostream &operator<<(std::ostream &out, const Array *ast)
 std::ostream &operator<<(std::ostream &out, const Binary *ast)
 {
     out << "ast.BinaryOp(";
-    out << bop_string(ast->op);
+    out << bop_string(ast->op);  // maybe overload for each binary op.
     out << ",";
     out << ast->left;
     out << ",";
@@ -78,7 +81,7 @@ std::ostream &operator<<(std::ostream &out, const Function *ast)
     for (auto arg_param : ast->params) {
         out << arg_param.id;
         out << " ";
-        out << arg_param.expr;
+        out << arg_param.expr;  // after desugaring this part is unrecognized AST
         out << ",";
     }
     out << ")";
@@ -141,7 +144,8 @@ std::ostream &operator<<(std::ostream &out, const LiteralString *ast)
 {
     out << "ast.LiteralString(";
     // TODO: find a better way to print UString
-    for (const auto& c: ast->value) out << static_cast<char>(c);
+    for (const auto &c : ast->value)
+        out << static_cast<char>(c);
     out << ")";
     return out;
 }
@@ -182,7 +186,6 @@ std::ostream &operator<<(std::ostream &out, Var *ast)
 // keep empty cases for desugared nodes or just delete them ?
 std::ostream &operator<<(std::ostream &out, const AST *ast_)
 {
-    // std::cout << ASTTypeToString(ast_->type) << " : ";
     if (auto *ast = dynamic_cast<const Apply *>(ast_)) {
         out << ast;
 
@@ -259,8 +262,10 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
         // not implemented, but after desugaring id field will be set to nullptr
     } else if (auto *ast = dynamic_cast<const Unary *>(ast_)) {
         out << ast;
+
     } else if (auto *ast = dynamic_cast<const Var *>(ast_)) {
         out << ast;
+
     } else {
         out << "INTERNAL ERROR: Unknown AST: " << std::endl;
         std::abort();
@@ -277,9 +282,17 @@ void print_tokens(Tokens tokens)
     std::cout << std::endl;
 }
 
+void write_to_file(std::string filename, AST *ast)
+{
+    std::ofstream myfile;
+    myfile.open(filename);
+    myfile << ast;
+    myfile.close();
+}
+
 int main(int argc, char const *argv[])
 {
-    const char *str = "if 2 == 3 then \"magic\" else 0";
+    const char *str = "if 2 == 6 then \"magic\" else 0";
 
     Allocator *alloc = new Allocator();
     Tokens tokens = jsonnet_lex("file", str);
@@ -287,12 +300,16 @@ int main(int argc, char const *argv[])
     AST *ast = jsonnet_parse(alloc, tokens);
 
     // doesn't work properly with desugaring
-    jsonnet_desugar(alloc, ast, nullptr);
+    // jsonnet_desugar(alloc, ast, nullptr);
 
     // print AST
-    std::cout << "AST nodes:\n";
-    std::cout << ast;
-    std::cout << std::endl;
+    if (test_mode) {
+      std::cout << "AST nodes:\n";
+      std::cout << ast;
+      std::cout << std::endl;
+    }
+    // TODO: pass the name of file as commmand line arg
+    write_to_file("core/type_inference/ast_string.txt", ast);
 
     return 0;
 }
