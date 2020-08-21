@@ -142,11 +142,11 @@ std::ostream &operator<<(std::ostream &out, const LiteralBoolean *ast)
 
 std::ostream &operator<<(std::ostream &out, const LiteralString *ast)
 {
-    out << "ast.LiteralString(";
+    out << "ast.LiteralString(\"";
     // TODO: find a better way to print UString
     for (const auto &c : ast->value)
-        out << static_cast<char>(c);
-    out << ")";
+        out << static_cast<char>(c); // check what if we have multi-line string
+    out << "\")";
     return out;
 }
 
