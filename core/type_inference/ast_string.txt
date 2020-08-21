@@ -1,0 +1,1 @@
+ast.Conditional(ast.BinaryOp("==",ast.LiteralNumber(2),ast.LiteralNumber(6)), ast.LiteralString(magic), ast.LiteralNumber(0))
