@@ -6,9 +6,9 @@
 // ast.BinaryOp("==", ast.Integer("2"), ast.Integer("3")),
 // …,
 
+#include <fstream>
 #include <iostream>
 #include <ostream>
-#include <fstream>
 #include <string>
 
 #include "./ast.h"
@@ -16,7 +16,7 @@
 #include "lexer.h"
 #include "parser.h"
 
-const bool test_mode = true;
+const bool test_mode = false;
 
 std::ostream &operator<<(std::ostream &out, const AST *ast_);
 
@@ -79,9 +79,14 @@ std::ostream &operator<<(std::ostream &out, const Function *ast)
 {
     out << "ast.Function(";
     for (auto arg_param : ast->params) {
-        out << arg_param.id;
+        if (arg_param.id) {
+            out << arg_param.id;  // can be nullptr
+        }
         out << " ";
-        out << arg_param.expr;  // after desugaring this part is unrecognized AST
+        if (arg_param.expr) {
+            out << arg_param.expr;  // can be nullptr
+        }
+
         out << ",";
     }
     out << ")";
@@ -119,15 +124,8 @@ std::ostream &operator<<(std::ostream &out, const Import *ast)
 
 std::ostream &operator<<(std::ostream &out, const Local *ast)
 {
-    // it should be changed most probably
     out << "ast.Local(";
     out << ast->body;
-    for (auto bind : ast->binds) {
-        out << ',';
-        out << bind.var;
-        out << ": ";
-        out << bind.body;
-    }
     out << ")";
     return out;
 }
@@ -145,7 +143,7 @@ std::ostream &operator<<(std::ostream &out, const LiteralString *ast)
     out << "ast.LiteralString(\"";
     // TODO: find a better way to print UString
     for (const auto &c : ast->value)
-        out << static_cast<char>(c); // check what if we have multi-line string
+        out << static_cast<char>(c);  // check what if we have multi-line string
     out << "\")";
     return out;
 }
@@ -165,7 +163,7 @@ std::ostream &operator<<(std::ostream &out, const DesugaredObject *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Unary *ast)
+std::ostream &operator<<(std::ostream &out, const Unary *ast)
 {
     out << "ast.Unary(";
     out << "\"" << uop_string(ast->op) << "\"";
@@ -175,10 +173,20 @@ std::ostream &operator<<(std::ostream &out, Unary *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, Var *ast)
+std::ostream &operator<<(std::ostream &out, const Var *ast)
 {
     out << "ast.Var(";
     out << ast->id;
+    out << ")";
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const Index *ast)
+{
+    out << "ast.Index(";
+    out << ast->target;
+    out << ", ";
+    out << ast->index;
     out << ")";
     return out;
 }
@@ -189,16 +197,16 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
     if (auto *ast = dynamic_cast<const Apply *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<const ApplyBrace *>(ast_)) {
+    } else if (dynamic_cast<const ApplyBrace *>(ast_)) {
         // nothing here
 
     } else if (auto *ast = dynamic_cast<const Array *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<const ArrayComprehension *>(ast_)) {
+    } else if (dynamic_cast<const ArrayComprehension *>(ast_)) {
         // ArrayComprehension is desugared and doesn't exist in core AST
 
-    } else if (auto *ast = dynamic_cast<const Assert *>(ast_)) {
+    } else if (dynamic_cast<const Assert *>(ast_)) {
     } else if (auto *ast = dynamic_cast<const Binary *>(ast_)) {
         out << ast;
 
@@ -208,8 +216,9 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
     } else if (auto *ast = dynamic_cast<const Conditional *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<const Dollar *>(ast_)) {
+    } else if (dynamic_cast<const Dollar *>(ast_)) {
         // $ is desugared and is not a keyword in core AST
+
     } else if (auto *ast = dynamic_cast<const Error *>(ast_)) {
         out << ast;
 
@@ -219,14 +228,18 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
     } else if (auto *ast = dynamic_cast<const Import *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<const Importstr *>(ast_)) {
+    } else if (dynamic_cast<const Importstr *>(ast_)) {
         // not implemented
+        out << "import_str";
 
-    } else if (auto *ast = dynamic_cast<const InSuper *>(ast_)) {
+    } else if (dynamic_cast<const InSuper *>(ast_)) {
         // not implemented
+        out << "insuper";
 
     } else if (auto *ast = dynamic_cast<const Index *>(ast_)) {
         // slices are desugared, how to deal with other cases?
+        out << ast;
+
     } else if (auto *ast = dynamic_cast<const Local *>(ast_)) {
         // object-level local is desugared;
         // the definition of Local is not completely clear for me: body vs binds?
@@ -242,7 +255,7 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
         out << ast;
 
     } else if (dynamic_cast<const LiteralNull *>(ast_)) {
-        out << "ast.Null";
+        out << "ast.LiteralNull()";
 
     } else if (auto *ast = dynamic_cast<const DesugaredObject *>(ast_)) {
         // object after desugaring that doesn't contain object-level locals, assert
@@ -250,16 +263,24 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
 
     } else if (dynamic_cast<const Object *>(ast_)) {
         // desugared to DesugaredObject
+
     } else if (dynamic_cast<const ObjectComprehension *>(ast_)) {
         // is desugared to simple ObjectComprehension
-    } else if (auto *ast = dynamic_cast<const ObjectComprehensionSimple *>(ast_)) {
+
+    } else if (dynamic_cast<const ObjectComprehensionSimple *>(ast_)) {
         // not implemented yet
+
     } else if (dynamic_cast<const Parens *>(ast_)) {
         // is desugared
+
     } else if (dynamic_cast<const Self *>(ast_)) {
         // Nothing to do.
-    } else if (auto *ast = dynamic_cast<const SuperIndex *>(ast_)) {
+        out << "ast.Self";
+
+    } else if (dynamic_cast<const SuperIndex *>(ast_)) {
         // not implemented, but after desugaring id field will be set to nullptr
+        out << "super_index";
+
     } else if (auto *ast = dynamic_cast<const Unary *>(ast_)) {
         out << ast;
 
@@ -267,8 +288,9 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
         out << ast;
 
     } else {
-        out << "INTERNAL ERROR: Unknown AST: " << std::endl;
-        std::abort();
+        // out << "lalalalla " << (ast_ == nullptr) << std::endl;
+        
+        std::cerr << "INTERNAL ERROR: Unknown AST: " << std::endl;
     }
     return out;
 }
@@ -290,24 +312,63 @@ void write_to_file(std::string filename, AST *ast)
     myfile.close();
 }
 
+const char *examples(int example)
+{
+    const char *res = "";
+    switch (example) {
+        case 1: res = "if 2 == 6 then \"magic\" else 0"; break;
+        case 2: res = "[1, 2, 3]"; break;
+        case 3:
+            res = R""""({ 
+            person1: {
+                name: "Alice",
+                welcome: "Hello " + self.name + "!",
+            },
+            person2: self.person1 { name: "Bob" },
+        })"""";
+            break;
+        case 4: res = "{local b = [1, 2, 3, 4, 5], b: b[1::2], s: self.b}"; break;
+        case 5:
+            res = R""""(
+        local person(name) = {
+            name: name,
+            welcome: 'Hello ' + name + '!',
+        }; {})"""";
+            break;
+        case 6:
+            res = R""""({ 
+            local obj = self,
+            person1: {
+                name: "Alice",
+                kind: "child",
+            },
+            person2: { 
+                name: "Bob",
+                kind: obj.person1.kind 
+            },
+        })"""";
+            break;
+        default: break;
+    }
+    return res;
+}
+
 int main(int argc, char const *argv[])
 {
-    const char *str = "if 2 == 6 then \"magic\" else 0";
-
+    const char *input = examples(4);
     Allocator *alloc = new Allocator();
-    Tokens tokens = jsonnet_lex("file", str);
 
+    Tokens tokens = jsonnet_lex("file", input);
     AST *ast = jsonnet_parse(alloc, tokens);
-
-    // doesn't work properly with desugaring
-    // jsonnet_desugar(alloc, ast, nullptr);
+    jsonnet_desugar(alloc, ast, nullptr);
 
     // print AST
     if (test_mode) {
-      std::cout << "AST nodes:\n";
-      std::cout << ast;
-      std::cout << std::endl;
+        std::cout << "AST nodes:\n";
+        std::cout << ast;
+        std::cout << std::endl;
     }
+
     // TODO: pass the name of file as commmand line arg
     write_to_file("core/type_inference/ast_string.txt", ast);
 
