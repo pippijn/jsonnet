@@ -114,14 +114,6 @@ std::ostream &operator<<(std::ostream &out, const Error *ast)
     return out;
 }
 
-std::ostream &operator<<(std::ostream &out, const Import *ast)
-{
-    out << "ast.Import(";
-    out << ast->file;
-    out << ")";
-    return out;
-}
-
 std::ostream &operator<<(std::ostream &out, const Local *ast)
 {
     out << "ast.Local(";
@@ -141,9 +133,15 @@ std::ostream &operator<<(std::ostream &out, const LiteralBoolean *ast)
 std::ostream &operator<<(std::ostream &out, const LiteralString *ast)
 {
     out << "ast.LiteralString(\"";
-    // TODO: find a better way to print UString
-    for (const auto &c : ast->value)
-        out << static_cast<char>(c);  // check what if we have multi-line string
+    for (const auto &c : ast->value) {
+        char ch = static_cast<char>(c);
+        if (ch == '\n') {
+            out << R"(\n)";
+        } else {
+            out << ch;
+        }
+    }
+    // out << encode_utf8(ast->value); // if multiline output string is ok
     out << "\")";
     return out;
 }
@@ -191,6 +189,24 @@ std::ostream &operator<<(std::ostream &out, const Index *ast)
     return out;
 }
 
+std::ostream &operator<<(std::ostream &out, const SuperIndex *ast)
+{
+    out << "ast.Index(";
+    out << "ast.Super()";
+    out << ", ";
+    out << ast->index;
+    out << ")";
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const InSuper *ast)
+{
+    out << "ast.InSuper(";
+    out << ast->element;
+    out << ")";
+    return out;
+}
+
 // keep empty cases for desugared nodes or just delete them ?
 std::ostream &operator<<(std::ostream &out, const AST *ast_)
 {
@@ -207,6 +223,8 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
         // ArrayComprehension is desugared and doesn't exist in core AST
 
     } else if (dynamic_cast<const Assert *>(ast_)) {
+        // object- and extression-level asserts are removed --> maybe nothing to do here
+
     } else if (auto *ast = dynamic_cast<const Binary *>(ast_)) {
         out << ast;
 
@@ -225,19 +243,19 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
     } else if (auto *ast = dynamic_cast<const Function *>(ast_)) {
         out << ast;
 
-    } else if (auto *ast = dynamic_cast<const Import *>(ast_)) {
-        out << ast;
+    } else if (dynamic_cast<const Import *>(ast_)) {
+        // desugared: substituted with file content or error
 
     } else if (dynamic_cast<const Importstr *>(ast_)) {
-        // not implemented
-        out << "import_str";
+        // desugared: substituted with file content or error
 
-    } else if (dynamic_cast<const InSuper *>(ast_)) {
-        // not implemented
-        out << "insuper";
+    } else if (auto *ast = dynamic_cast<const InSuper *>(ast_)) {
+        // example: {base: {...}, a: base + {is_field_in_super: "some_field" in super}} -->
+        //          is_field_in_super will be true or false
+        // it doesn't matter for type inference because type of is_field_in_super is always bool
+        out << ast;
 
     } else if (auto *ast = dynamic_cast<const Index *>(ast_)) {
-        // slices are desugared, how to deal with other cases?
         out << ast;
 
     } else if (auto *ast = dynamic_cast<const Local *>(ast_)) {
@@ -265,21 +283,19 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
         // desugared to DesugaredObject
 
     } else if (dynamic_cast<const ObjectComprehension *>(ast_)) {
-        // is desugared to simple ObjectComprehension
+        // desugared to simple ObjectComprehension
 
     } else if (dynamic_cast<const ObjectComprehensionSimple *>(ast_)) {
         // not implemented yet
 
     } else if (dynamic_cast<const Parens *>(ast_)) {
-        // is desugared
+        // desugared
 
     } else if (dynamic_cast<const Self *>(ast_)) {
-        // Nothing to do.
-        out << "ast.Self";
+        out << "ast.Self()";
 
-    } else if (dynamic_cast<const SuperIndex *>(ast_)) {
-        // not implemented, but after desugaring id field will be set to nullptr
-        out << "super_index";
+    } else if (auto *ast = dynamic_cast<const SuperIndex *>(ast_)) {
+        out << ast;
 
     } else if (auto *ast = dynamic_cast<const Unary *>(ast_)) {
         out << ast;
@@ -288,8 +304,7 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
         out << ast;
 
     } else {
-        // out << "lalalalla " << (ast_ == nullptr) << std::endl;
-        
+        // do we need abort here?
         std::cerr << "INTERNAL ERROR: Unknown AST: " << std::endl;
     }
     return out;
@@ -320,34 +335,72 @@ const char *examples(int example)
         case 2: res = "[1, 2, 3]"; break;
         case 3:
             res = R""""({ 
-            person1: {
-                name: "Alice",
-                welcome: "Hello " + self.name + "!",
-            },
-            person2: self.person1 { name: "Bob" },
-        })"""";
+                person1: {
+                    name: "Alice",
+                    welcome: "Hello " + self.name + "!",
+                },
+                person2: self.person1 { name: "Bob" },
+            })"""";
             break;
         case 4: res = "{local b = [1, 2, 3, 4, 5], b: b[1::2], s: self.b}"; break;
         case 5:
             res = R""""(
-        local person(name) = {
-            name: name,
-            welcome: 'Hello ' + name + '!',
-        }; {})"""";
+                local person(name) = {
+                    name: name,
+                    welcome: 'Hello ' + name + '!',
+                }; 
+                {}
+            )"""";
             break;
-        case 6:
+        case 6:  // example that produces Index node
             res = R""""({ 
-            local obj = self,
-            person1: {
-                name: "Alice",
-                kind: "child",
-            },
-            person2: { 
-                name: "Bob",
-                kind: obj.person1.kind 
-            },
-        })"""";
+                local obj = self,
+                person1: {
+                    name: "Alice",
+                    kind: "child",
+                },
+                person2: { 
+                    name: "Bob",
+                    kind: obj.person1.kind 
+                },
+            })"""";
             break;
+        case 7:  // example that produces SuperIndex and InSuper nodes
+            res = R""""({ 
+                local person = {
+                    name: "Alice",
+                    age: 20,
+                    country: "Wonderland"
+                },
+                student: person + { 
+                    name: super.name,
+                    age: super["age"],  
+                    university: "MIT", 
+                    has_country: "country" in super, 
+                },
+            })"""";
+            break;
+        case 8:  // example of array comprehension
+            res = R""""({ 
+                local person = {
+                    friends: ["Martin", "Lu"]
+                },
+                student: person + { 
+                    university: "MIT", 
+                    contacts: [i + "_" + self.university for i in super.friends]  
+                },
+            })"""";
+            break;
+        case 9: res = "{b: 3, assert b > 2 : 'b must be bigger than 2'}"; break;
+        case 10:  // text block will be printed in AST as multiline text
+            res = R""""(
+                {
+                    text: |||  
+                        text
+                        block
+                    |||
+                }
+            )"""";
         default: break;
     }
     return res;
@@ -355,7 +408,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(4);
+    const char *input = examples(10);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("file", input);
@@ -368,7 +421,6 @@ int main(int argc, char const *argv[])
         std::cout << ast;
         std::cout << std::endl;
     }
-
     // TODO: pass the name of file as commmand line arg
     write_to_file("core/type_inference/ast_string.txt", ast);
 
