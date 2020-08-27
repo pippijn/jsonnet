@@ -24,9 +24,9 @@ std::ostream &operator<<(std::ostream &out, const ArgParam arg_param)
 {
     out << "ast.ArgParam(";
     if (arg_param.id) {
-        out << "id=";
+        out << "id=\"";
         out << arg_param.id;  // can be nullptr
-        out << ", ";
+        out << "\", ";
     }
     if (arg_param.expr) {
         out << "expr=";
@@ -42,9 +42,9 @@ std::ostream &operator<<(std::ostream &out, const Local::Bind& bind)
     if (bind.var->name == std) // TODO: decide what to do with std-bind
         return out;
     out << "ast.Bind(";
-    out << "var=";
+    out << "var=\"";
     out << bind.var;
-    out << ", ";
+    out << "\", ";
     out << "body=";
     out << bind.body;
     out << ")";
@@ -67,7 +67,7 @@ std::ostream &operator<<(std::ostream &out, const Apply *ast)
 std::ostream &operator<<(std::ostream &out, const Array *ast)
 {
     out << "ast.Array([";
-    for (auto &el : ast->elements) {
+    for (const auto &el : ast->elements) {
         out << el.expr;
         out << ",";
     }
@@ -91,9 +91,11 @@ std::ostream &operator<<(std::ostream &out, const BuiltinFunction *ast)
 {
     out << "ast.BuiltInFunction(";
     out << ast->name;
-    for (auto param : ast->params) {
+    for (const auto &param : ast->params) {
         out << ",";
+        out << "\"";
         out << param;
+        out << "\"";
     }
     out << ")";
     return out;
@@ -102,7 +104,7 @@ std::ostream &operator<<(std::ostream &out, const BuiltinFunction *ast)
 std::ostream &operator<<(std::ostream &out, const Function *ast)
 {
     out << "ast.Function(";
-    for (const auto arg_param : ast->params) {
+    for (const auto &arg_param : ast->params) {
         out << arg_param;
         out << ",";
     }
@@ -207,9 +209,9 @@ std::ostream &operator<<(std::ostream &out, const Unary *ast)
 
 std::ostream &operator<<(std::ostream &out, const Var *ast)
 {
-    out << "ast.Var(";
+    out << "ast.Var(\"";
     out << ast->id;
-    out << ")";
+    out << "\")";
     return out;
 }
 
