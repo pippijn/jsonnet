@@ -1,7 +1,3 @@
-
-# ast.Conditional(ast.BinaryOp(==,ast.LiteralNumber(2),ast.LiteralNumber(3)), ast.LiteralString(magic), ast.LiteralNumber(0))
-
-
 class AST(object):
     def __init__(self):
         pass
@@ -13,7 +9,7 @@ class Object(AST):
 
 
 class Local(AST):
-    def __init__(self, body, binds):
+    def __init__(self, body, *binds):
         self.body = body
         self.binds = binds
 
@@ -80,11 +76,44 @@ class Apply(AST):
 
 
 class Function(AST):
-    def __init__(self, id, arguments, body):
-        self.arguments = arguments
+    def __init__(self, body, *argv):
         self.body = body
+        self.arguments = argv
 
 
 class Error(AST):
     def __init__(self, msg):
         self.msg = msg
+
+
+class Index(AST):
+    def __init__(self, target, index):
+        self.target = target
+        self.index = index
+
+
+class Self(AST):
+    def __init__(self):
+        pass
+
+
+class Super(AST):
+    def __init__(self):
+        pass
+
+
+class InSuper(AST):
+    def __init__(self, elem):
+        self.element = elem
+
+
+class ArgParam():
+    def __init__(self, id=None, expr=None):
+        self.id = id
+        self.expr = expr
+
+
+class Bind():
+    def __init__(self, var, body):
+        self.var = var
+        self.body = body
