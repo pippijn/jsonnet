@@ -9,71 +9,11 @@
 """
 
 from __future__ import print_function
-
-
-# =======================================================#
-# Class definitions for the abstract syntax tree nodes
-# which comprise the little language for which types
-# will be inferred
-
-class Lambda(object):
-    """Lambda abstraction"""
-
-    def __init__(self, v, body):
-        self.v = v
-        self.body = body
-
-    def __str__(self):
-        return "(fn {v} => {body})".format(v=self.v, body=self.body)
-
-
-class Identifier(object):
-    """Identifier"""
-
-    def __init__(self, name):
-        self.name = name
-
-    def __str__(self):
-        return self.name
-
-
-class Apply(object):
-    """Function application"""
-
-    def __init__(self, fn, arg):
-        self.fn = fn
-        self.arg = arg
-
-    def __str__(self):
-        return "({fn} {arg})".format(fn=self.fn, arg=self.arg)
-
-
-class Let(object):
-    """Let binding"""
-
-    def __init__(self, v, defn, body):
-        self.v = v
-        self.defn = defn
-        self.body = body
-
-    def __str__(self):
-        return "(let {v} = {defn} in {body})".format(v=self.v, defn=self.defn, body=self.body)
-
-
-class Letrec(object):
-    """Letrec binding"""
-
-    def __init__(self, v, defn, body):
-        self.v = v
-        self.defn = defn
-        self.body = body
-
-    def __str__(self):
-        return "(letrec {v} = {defn} in {body})".format(v=self.v, defn=self.defn, body=self.body)
-
+from lambda_ast import Lambda, Let, Letrec, Apply, Identifier
 
 # =======================================================#
 # Exception types
+
 
 class InferenceError(Exception):
     """Raised if the type inference algorithm cannot infer types successfully"""
@@ -126,7 +66,8 @@ class TypeVariable(object):
         """
         if self.__name is None:
             self.__name = TypeVariable.next_variable_name
-            TypeVariable.next_variable_name = chr(ord(TypeVariable.next_variable_name) + 1)
+            TypeVariable.next_variable_name = chr(
+                ord(TypeVariable.next_variable_name) + 1)
         return self.__name
 
     def __str__(self):
@@ -156,7 +97,6 @@ class TypeRowOperator(object):
         return "{{{0}}}".format(', '.join(name_type_pairs))
 
 
-
 class TypeOperator(object):
     """An n-ary type constructor which builds a new type from old"""
 
@@ -184,7 +124,7 @@ class Function(TypeOperator):
 # Basic types are constructed with a nullary type constructor
 Integer = TypeOperator("int", [])  # Basic integer
 Bool = TypeOperator("bool", [])  # Basic bool
-String = TypeOperator("string", []) # string 
+String = TypeOperator("string", [])  # string
 
 
 # =======================================================#
@@ -220,7 +160,7 @@ def analyse(node, env, non_generic=None):
 
     if isinstance(node, Identifier):
         # print(f'indentifier: {node}')
-        result_type = get_type(node.name, env, non_generic) 
+        result_type = get_type(node.name, env, non_generic)
         # print(f'indentifier: {result_type}')
         return result_type
     elif isinstance(node, Apply):
@@ -328,13 +268,14 @@ def unify(t1, t2):
     if isinstance(a, TypeVariable):
         if a != b:
             if occurs_in_type(a, b):
-                raise InferenceError("recursive unification")            
+                raise InferenceError("recursive unification")
             a.instance = b
-    elif (isinstance(a, TypeOperator) or isinstance(a, TypeRowOperator))  and isinstance(b, TypeVariable):
+    elif (isinstance(a, TypeOperator) or isinstance(a, TypeRowOperator)) and isinstance(b, TypeVariable):
         unify(b, a)
     elif isinstance(a, TypeOperator) and isinstance(b, TypeOperator):
         if a.name != b.name or len(a.types) != len(b.types):
-            raise InferenceError("Type mismatch: {0} != {1}".format(str(a), str(b)))
+            raise InferenceError(
+                "Type mismatch: {0} != {1}".format(str(a), str(b)))
         for p, q in zip(a.types, b.types):
             unify(p, q)
     elif isinstance(a, TypeRowOperator) and isinstance(b, TypeRowOperator):
@@ -344,12 +285,13 @@ def unify(t1, t2):
 
 
 def unify_rows(r1, r2):
-    if len(r1.fields) != len(r2.fields) or set(r1.fields.keys()) != set(r2.fields.keys()): 
-        raise InferenceError("Type mismatch: {0} != {1}".format(str(r1), str(r2)))
+    if len(r1.fields) != len(r2.fields) or set(r1.fields.keys()) != set(r2.fields.keys()):
+        raise InferenceError(
+            "Type mismatch: {0} != {1}".format(str(r1), str(r2)))
     # in case we don't allow polymorhic fields
     for k in r1.fields:
         unify(r1.fields[k], r2.fields[k])
-            
+
 
 def prune(t):
     """Returns the currently defining instance of t.
@@ -497,10 +439,9 @@ def main():
 
     null = Letrec("null", Identifier("null"), Identifier("null"))
 
-
     examples = {
 
-        # eq: a -> (a-> bool) 
+        # eq: a -> (a-> bool)
         # Apply(Apply(Identifier("eq"), Identifier("true")), Identifier("2")),
 
         # null example
@@ -515,9 +456,8 @@ def main():
                 Let("y",
                     Identifier("true"),
                     Apply(Apply(Identifier("record"),
-                        Identifier("x")),
-                        Identifier("y"))))),
-        
+                                Identifier("x")),
+                          Identifier("y"))))),
 
         # simple object withput internal local variables
         Let("x",
@@ -525,8 +465,8 @@ def main():
             Let("y",
                 Identifier("x"),
                 Apply(Apply(Identifier("record"),
-                    Identifier("x")),
-                    Identifier("y")))),
+                            Identifier("x")),
+                      Identifier("y")))),
 
         # cyclic declaration
         Let("x",
@@ -534,8 +474,8 @@ def main():
             Let("y",
                 Identifier("x"),
                 Apply(Apply(Identifier("record"),
-                    Identifier("x")),
-                    Identifier("y")))),
+                            Identifier("x")),
+                      Identifier("y")))),
 
     }
 
