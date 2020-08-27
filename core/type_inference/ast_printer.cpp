@@ -18,15 +18,39 @@
 
 const bool test_mode = false;
 
-std::ostream &operator<<(std::ostream &out, const AST *ast_);
+std::ostream &operator<<(std::ostream &out, const AST *ast);
 
-std::ostream &operator<<(std::ostream &out, const LiteralNumber *ast)
+std::ostream &operator<<(std::ostream &out, const ArgParam arg_param)
 {
-    out << "ast.LiteralNumber(";
-    out << ast->value;
+    out << "ast.ArgParam(";
+    if (arg_param.id) {
+        out << "id=";
+        out << arg_param.id;  // can be nullptr
+        out << ", ";
+    }
+    if (arg_param.expr) {
+        out << "expr=";
+        out << arg_param.expr;  // can be nullptr
+    }
     out << ")";
     return out;
 }
+
+std::ostream &operator<<(std::ostream &out, const Local::Bind& bind)
+{
+    UString std = decode_utf8("std");
+    if (bind.var->name == std) // TODO: decide what to do with std-bind
+        return out;
+    out << "ast.Bind(";
+    out << "var=";
+    out << bind.var;
+    out << ", ";
+    out << "body=";
+    out << bind.body;
+    out << ")";
+    return out;
+}
+
 // Overloading '<<' for AST and its nodes
 std::ostream &operator<<(std::ostream &out, const Apply *ast)
 {
@@ -34,7 +58,7 @@ std::ostream &operator<<(std::ostream &out, const Apply *ast)
     out << ast->target;
     for (ArgParam arg : ast->args) {
         out << ", ";
-        out << arg.expr;
+        out << arg;
     }
     out << ")";
     return out;
@@ -78,15 +102,8 @@ std::ostream &operator<<(std::ostream &out, const BuiltinFunction *ast)
 std::ostream &operator<<(std::ostream &out, const Function *ast)
 {
     out << "ast.Function(";
-    for (auto arg_param : ast->params) {
-        if (arg_param.id) {
-            out << arg_param.id;  // can be nullptr
-        }
-        out << " ";
-        if (arg_param.expr) {
-            out << arg_param.expr;  // can be nullptr
-        }
-
+    for (const auto arg_param : ast->params) {
+        out << arg_param;
         out << ",";
     }
     out << ")";
@@ -118,6 +135,18 @@ std::ostream &operator<<(std::ostream &out, const Local *ast)
 {
     out << "ast.Local(";
     out << ast->body;
+    for (const Local::Bind& bind : ast->binds) {
+        out << ",";
+        out << bind;
+    }
+    out << ")";
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const LiteralNumber *ast)
+{
+    out << "ast.LiteralNumber(";
+    out << ast->value;
     out << ")";
     return out;
 }
@@ -127,6 +156,12 @@ std::ostream &operator<<(std::ostream &out, const LiteralBoolean *ast)
     out << "ast.LiteralBoolean(";
     out << ast->value;
     out << ")";
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const LiteralNull *ast)
+{
+    out << "ast.LiteralNull()";
     return out;
 }
 
@@ -141,7 +176,6 @@ std::ostream &operator<<(std::ostream &out, const LiteralString *ast)
             out << ch;
         }
     }
-    // out << encode_utf8(ast->value); // if multiline output string is ok
     out << "\")";
     return out;
 }
@@ -186,6 +220,12 @@ std::ostream &operator<<(std::ostream &out, const Index *ast)
     out << ", ";
     out << ast->index;
     out << ")";
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const Self *ast)
+{
+    out << "ast.Self()";
     return out;
 }
 
@@ -272,8 +312,8 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
     } else if (auto *ast = dynamic_cast<const LiteralString *>(ast_)) {
         out << ast;
 
-    } else if (dynamic_cast<const LiteralNull *>(ast_)) {
-        out << "ast.LiteralNull()";
+    } else if (auto *ast = dynamic_cast<const LiteralNull *>(ast_)) {
+        out << ast;
 
     } else if (auto *ast = dynamic_cast<const DesugaredObject *>(ast_)) {
         // object after desugaring that doesn't contain object-level locals, assert
@@ -291,8 +331,8 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
     } else if (dynamic_cast<const Parens *>(ast_)) {
         // desugared
 
-    } else if (dynamic_cast<const Self *>(ast_)) {
-        out << "ast.Self()";
+    } else if (auto *ast = dynamic_cast<const Self *>(ast_)) {
+        out << ast;
 
     } else if (auto *ast = dynamic_cast<const SuperIndex *>(ast_)) {
         out << ast;
@@ -401,6 +441,26 @@ const char *examples(int example)
                     |||
                 }
             )"""";
+        case 11:
+            res = R""""(
+                {
+                    local uni = "TUM",
+                    age: 5,
+                    year: 2020,
+                    c: {
+                        local sem = 3,
+                        age: $['age'],
+                        x: {
+                            x_year: $['year'],
+                            x_sem: sem,
+                            x_obj: {
+                                y: y_smth
+                            }
+                        }
+                    }
+                }
+            )"""";
+            break;
         default: break;
     }
     return res;
@@ -408,7 +468,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(10);
+    const char *input = examples(11);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("file", input);
