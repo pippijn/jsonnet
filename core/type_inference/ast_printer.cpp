@@ -18,6 +18,8 @@
 
 const bool test_mode = false;
 
+std::ostream &operator<<(std::ostream &out, const LocationRange *lr);
+
 std::ostream &operator<<(std::ostream &out, const AST *ast);
 
 std::ostream &operator<<(std::ostream &out, const ArgParam arg_param)
@@ -55,6 +57,8 @@ std::ostream &operator<<(std::ostream &out, const Local::Bind& bind)
 std::ostream &operator<<(std::ostream &out, const Apply *ast)
 {
     out << "ast.Apply(";
+    out << &ast->location;
+    out << ",";
     out << ast->target;
     for (ArgParam arg : ast->args) {
         out << ", ";
@@ -66,6 +70,8 @@ std::ostream &operator<<(std::ostream &out, const Apply *ast)
 
 std::ostream &operator<<(std::ostream &out, const Array *ast)
 {
+    out << &ast->location;
+    out << ",";
     out << "ast.Array([";
     for (const auto &el : ast->elements) {
         out << el.expr;
@@ -78,6 +84,8 @@ std::ostream &operator<<(std::ostream &out, const Array *ast)
 std::ostream &operator<<(std::ostream &out, const Binary *ast)
 {
     out << "ast.BinaryOp(";
+    out << &ast->location;
+    out << ",";
     out << "\"" << bop_string(ast->op) << "\"";  // maybe overload for each binary op.
     out << ",";
     out << ast->left;
@@ -90,6 +98,8 @@ std::ostream &operator<<(std::ostream &out, const Binary *ast)
 std::ostream &operator<<(std::ostream &out, const BuiltinFunction *ast)
 {
     out << "ast.BuiltInFunction(";
+    out << &ast->location;
+    out << ",";
     out << ast->name;
     for (const auto &param : ast->params) {
         out << ",";
@@ -104,18 +114,22 @@ std::ostream &operator<<(std::ostream &out, const BuiltinFunction *ast)
 std::ostream &operator<<(std::ostream &out, const Function *ast)
 {
     out << "ast.Function(";
+    out << &ast->location;
+    out << ",";
+    out << ast->body;
     for (const auto &arg_param : ast->params) {
-        out << arg_param;
         out << ",";
+        out << arg_param;
     }
     out << ")";
-    out << ast->body;
     return out;
 }
 
 std::ostream &operator<<(std::ostream &out, const Conditional *ast)
 {
     out << "ast.Conditional(";
+    out << &ast->location;
+    out << ",";
     out << ast->cond;
     out << ", ";
     out << ast->branchTrue;
@@ -128,6 +142,8 @@ std::ostream &operator<<(std::ostream &out, const Conditional *ast)
 std::ostream &operator<<(std::ostream &out, const Error *ast)
 {
     out << "ast.Error(";
+    out << &ast->location;
+    out << ",";
     out << ast->expr;
     out << ")";
     return out;
@@ -136,6 +152,8 @@ std::ostream &operator<<(std::ostream &out, const Error *ast)
 std::ostream &operator<<(std::ostream &out, const Local *ast)
 {
     out << "ast.Local(";
+    out << &ast->location;
+    out << ",";
     out << ast->body;
     for (const Local::Bind& bind : ast->binds) {
         out << ",";
@@ -148,6 +166,8 @@ std::ostream &operator<<(std::ostream &out, const Local *ast)
 std::ostream &operator<<(std::ostream &out, const LiteralNumber *ast)
 {
     out << "ast.LiteralNumber(";
+    out << &ast->location;
+    out << ",";
     out << ast->value;
     out << ")";
     return out;
@@ -156,6 +176,8 @@ std::ostream &operator<<(std::ostream &out, const LiteralNumber *ast)
 std::ostream &operator<<(std::ostream &out, const LiteralBoolean *ast)
 {
     out << "ast.LiteralBoolean(";
+    out << &ast->location;
+    out << ",";
     out << ast->value;
     out << ")";
     return out;
@@ -163,13 +185,18 @@ std::ostream &operator<<(std::ostream &out, const LiteralBoolean *ast)
 
 std::ostream &operator<<(std::ostream &out, const LiteralNull *ast)
 {
-    out << "ast.LiteralNull()";
+    out << "ast.LiteralNull(";
+    out << &ast->location;
+    out << ")";
     return out;
 }
 
 std::ostream &operator<<(std::ostream &out, const LiteralString *ast)
 {
-    out << "ast.LiteralString(\"";
+    out << "ast.LiteralString(";
+    out << &ast->location;
+    out << ",";
+    out << "\"";
     for (const auto &c : ast->value) {
         char ch = static_cast<char>(c);
         if (ch == '\n') {
@@ -186,7 +213,10 @@ std::ostream &operator<<(std::ostream &out, const DesugaredObject *ast)
 {
     // - maybe it is better to overload operator << for Field structure
     // - maybe we will need hide field to kepp info about inheritance
-    out << "ast.Object({";
+    out << "ast.Object(";
+    out << &ast->location;
+    out << ",";
+    out << "{";
     for (auto field : ast->fields) {
         out << field.name;
         out << ": ";
@@ -200,6 +230,8 @@ std::ostream &operator<<(std::ostream &out, const DesugaredObject *ast)
 std::ostream &operator<<(std::ostream &out, const Unary *ast)
 {
     out << "ast.Unary(";
+    out << &ast->location;
+    out << ",";
     out << "\"" << uop_string(ast->op) << "\"";
     out << ",";
     out << ast->expr;
@@ -209,7 +241,10 @@ std::ostream &operator<<(std::ostream &out, const Unary *ast)
 
 std::ostream &operator<<(std::ostream &out, const Var *ast)
 {
-    out << "ast.Var(\"";
+    out << "ast.Var(";
+    out << &ast->location;
+    out << ",";
+    out << "\"";
     out << ast->id;
     out << "\")";
     return out;
@@ -218,6 +253,8 @@ std::ostream &operator<<(std::ostream &out, const Var *ast)
 std::ostream &operator<<(std::ostream &out, const Index *ast)
 {
     out << "ast.Index(";
+    out << &ast->location;
+    out << ", ";
     out << ast->target;
     out << ", ";
     out << ast->index;
@@ -227,13 +264,17 @@ std::ostream &operator<<(std::ostream &out, const Index *ast)
 
 std::ostream &operator<<(std::ostream &out, const Self *ast)
 {
-    out << "ast.Self()";
+    out << "ast.Self(";
+    out << &ast->location;
+    out << ")";
     return out;
 }
 
 std::ostream &operator<<(std::ostream &out, const SuperIndex *ast)
 {
     out << "ast.Index(";
+    out << &ast->location;
+    out << ",";
     out << "ast.Super()";
     out << ", ";
     out << ast->index;
@@ -244,8 +285,20 @@ std::ostream &operator<<(std::ostream &out, const SuperIndex *ast)
 std::ostream &operator<<(std::ostream &out, const InSuper *ast)
 {
     out << "ast.InSuper(";
+    out << &ast->location;
+    out << ",";
     out << ast->element;
     out << ")";
+    return out;
+}
+
+std::ostream &operator<<(std::ostream &out, const LocationRange *lr)
+{
+    out << "ast.Location(\"";
+    out << lr->begin;
+    out << ",";
+    out << lr->end;
+    out << "\")";
     return out;
 }
 
@@ -473,7 +526,7 @@ int main(int argc, char const *argv[])
     const char *input = examples(11);
     Allocator *alloc = new Allocator();
 
-    Tokens tokens = jsonnet_lex("file", input);
+    Tokens tokens = jsonnet_lex("", input);
     AST *ast = jsonnet_parse(alloc, tokens);
     jsonnet_desugar(alloc, ast, nullptr);
 
