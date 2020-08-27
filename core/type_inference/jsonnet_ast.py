@@ -88,6 +88,13 @@ class Function(AST):
         self.arguments = argv
 
 
+class BuiltinFunction(AST):
+    def __init__(self, location, name, *params):
+        self.location = location
+        self.name = name
+        self.params = params
+
+
 class Error(AST):
     def __init__(self, location, msg):
         super().__init__(location)
@@ -136,4 +143,5 @@ class Bind:
 
 class Location:
     def __init__(self, location):
-        self.begin, self.end = location.split(',') # string with structure <line>:<column>
+        # string with structure <line>:<column>
+        self.begin, self.end = location.split(',')
