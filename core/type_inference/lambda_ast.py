@@ -52,3 +52,33 @@ class Letrec(object):
 
     def __str__(self):
         return "(letrec {v} = {defn} in {body})".format(v=self.v, defn=self.defn, body=self.body)
+
+
+class LiteralNumber(object):
+    """LiteralNumber"""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return self.value
+
+
+class LiteralString(object):
+    """LiteralString"""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return self.value
+
+
+class LiteralBoolean(object):
+    """LiteralBoolean"""
+
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return self.value
