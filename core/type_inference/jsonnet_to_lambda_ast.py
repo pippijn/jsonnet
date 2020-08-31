@@ -2,6 +2,8 @@ import jsonnet_ast as ast
 from lambda_ast import *
 from lambda_types import *
 
+import hm_algo
+
 
 def build_record(fields):
     type_var = {}
@@ -22,23 +24,24 @@ def build_record(fields):
 
 
 def get_record_id_in_env(env):
-    if "record" not in env:
-        env["record"] = {}
-    record_id = "record{n}".format(n=len(env["record"]))
-    return record_id
+    # if "record" not in env:
+    #     env["record"] = {}
+    # record_id = "record{n}".format(n=len(env["record"]))
+    return "record0"
 
 
-def build_let_body(keys, record_id):
+def build_let_body(keys, record_id, env):
     if not keys:
         return Identifier(record_id)
-    return Apply(build_let_body(keys[1:], record_id), Identifier(keys[0]))
+    key = translate_to_lambda_ast(keys[0], env)
+    return Apply(build_let_body(keys[1:], record_id, env), Identifier(key)) 
 
 
-def translate_to_lambda_ast(ast: ast.AST, my_env):
-    if isinstance(ast, ast.Object):
-        record = build_record(ast.fields)
+def translate_to_lambda_ast(ast_: ast.AST, my_env):
+    if isinstance(ast_, ast.Object):
+        record = build_record(ast_.fields)
         record_id = get_record_id_in_env(my_env)
-        my_env["record"][record_id] = record
+        my_env[record_id] = record
 
         # create let object
         def process_fields(keys, fields, body):
@@ -48,73 +51,73 @@ def translate_to_lambda_ast(ast: ast.AST, my_env):
             translated_id = translate_to_lambda_ast(keys[0], my_env)
             return Let(translated_id, translated_body, process_fields(keys[1:], fields, body))
 
-        field_keys = list(ast.fields.keys())
-        let_body = build_let_body(field_keys, record_id)
-        res = process_fields(field_keys, ast.fields, let_body)
+        field_keys = list(ast_.fields.keys())
+        let_body = build_let_body(field_keys, record_id, my_env)
+        res = process_fields(field_keys, ast_.fields, let_body)
         return res
 
-    elif isinstance(ast, ast.Local):
+    elif isinstance(ast_, ast.Local):
         def process_binds(binds, body):
             if not binds:
                 return body
             translated_body = translate_to_lambda_ast(binds[0].body, my_env)
             return Let(binds[0].var, translated_body, process_binds(binds[1:], body))
-        body = translate_to_lambda_ast(ast.body, my_env)
-        return process_binds(ast.binds, body)
+        body = translate_to_lambda_ast(ast_.body, my_env)
+        return process_binds(ast_.binds, body)
 
-    elif isinstance(ast, ast.Apply):
-        return Apply(ast.fn, ast.argv)
+    elif isinstance(ast_, ast.Apply):
+        return Apply(ast_.fn, ast_.argv)
 
-    elif isinstance(ast, ast.Array):
+    elif isinstance(ast_, ast.Array):
         pass  # add to lambda AST
 
-    elif isinstance(ast, ast.Binary):
+    # elif isinstance(ast_, ast.Binary):
+    #     pass
+
+    # elif isinstance(ast_, ast.BuiltInFunction):
+    #     pass
+
+    elif isinstance(ast_, ast.Conditional):
         pass
 
-    elif isinstance(ast, ast.BuiltInFunction):
+    elif isinstance(ast_, ast.Error):
         pass
 
-    elif isinstance(ast, ast.Conditional):
+    elif isinstance(ast_, ast.Function):
         pass
 
-    elif isinstance(ast, ast.Error):
+    elif isinstance(ast_, ast.InSuper):
         pass
 
-    elif isinstance(ast, ast.Function):
+    elif isinstance(ast_, ast.Index):
         pass
 
-    elif isinstance(ast, ast.InSuper):
-        pass
+    elif isinstance(ast_, ast.LiteralBoolean):
+        return ast_.value
 
-    elif isinstance(ast, ast.Index):
-        pass
+    elif isinstance(ast_, ast.LiteralNumber):
+        return ast_.value
 
-    elif isinstance(ast, ast.LiteralBoolean):
-        return ast.value
+    elif isinstance(ast_, ast.LiteralString):
+        return ast_.value
 
-    elif isinstance(ast, ast.LiteralNumber):
-        return ast.value
-
-    elif isinstance(ast, ast.LiteralString):
-        return ast.value
-
-    elif isinstance(ast, ast.LiteralNull):
+    elif isinstance(ast_, ast.LiteralNull):
         return Letrec("null", Identifier("null"), Identifier("null"))
 
-    elif isinstance(ast, ast.ObjectComprehensionSimple):
+    # elif isinstance(ast_, ast.ObjectComprehensionSimple):
+    #     pass
+
+    elif isinstance(ast_, ast.Self):
         pass
 
-    elif isinstance(ast, ast.Self):
-        pass
+    # elif isinstance(ast_, ast.SuperIndex):
+    #     pass
 
-    elif isinstance(ast, ast.SuperIndex):
-        pass
+    # elif isinstance(ast_, ast.Unary):
+    #     pass
 
-    elif isinstance(ast, ast.Unary):
-        pass
-
-    elif isinstance(ast, ast.Var):
-        return Identifier(ast.id)
+    elif isinstance(ast_, ast.Var):
+        return Identifier(ast_.id)
 
     else:
         pass
@@ -133,5 +136,12 @@ def parse_ast(ast_str):
 if __name__ == "__main__":
     ast_str = read_ast("core/type_inference/ast_string.txt")
     print(f"AST: {ast_str}")
-    ast = parse_ast(ast_str)
-    print(ast)
+    ast_ = parse_ast(ast_str)
+    print(ast_)
+    env = {"None": TypeVariable()}
+    res = translate_to_lambda_ast(ast_, env)
+    print(res)
+    print("env", env)
+    hm_algo.try_exp(env, res)
+
+

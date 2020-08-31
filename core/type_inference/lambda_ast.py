@@ -13,9 +13,11 @@ class Identifier(object):
     """Identifier"""
 
     def __init__(self, name):
+        assert(isinstance(name, str))
         self.name = name
 
     def __str__(self):
+        print(f"identifier: {self.name.__class__}")
         return self.name
 
 
@@ -27,6 +29,8 @@ class Apply(object):
         self.arg = arg
 
     def __str__(self):
+        print(f'fn:{self.fn}')
+        print(f'arg:{self.arg.__class__}')
         return "({fn} {arg})".format(fn=self.fn, arg=self.arg)
 
 
@@ -71,6 +75,7 @@ class LiteralString(object):
         self.value = value
 
     def __str__(self):
+        print(f"inside LS{self.value}")
         return self.value
 
 

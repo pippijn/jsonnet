@@ -108,6 +108,14 @@ def analyse(node, env, non_generic=None):
         defn_type = analyse(node.defn, new_env, new_non_generic)
         unify(new_type, defn_type)
         return analyse(node.body, new_env, non_generic)
+    elif node is None:
+        # print(f'indentifier: {node}')
+        result_type = get_type("None", env, non_generic)
+        # print(f'indentifier: {result_type}')
+        return result_type
+    elif isinstance(node, int):
+        result_type = Number
+        return result_type
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
 
