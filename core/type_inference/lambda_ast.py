@@ -17,7 +17,6 @@ class Identifier(object):
         self.name = name
 
     def __str__(self):
-        print(f"identifier: {self.name.__class__}")
         return self.name
 
 
@@ -29,8 +28,6 @@ class Apply(object):
         self.arg = arg
 
     def __str__(self):
-        print(f'fn:{self.fn}')
-        print(f'arg:{self.arg.__class__}')
         return "({fn} {arg})".format(fn=self.fn, arg=self.arg)
 
 
@@ -65,7 +62,7 @@ class LiteralNumber(object):
         self.value = value
 
     def __str__(self):
-        return self.value
+        return str(self.value)
 
 
 class LiteralString(object):
@@ -75,7 +72,6 @@ class LiteralString(object):
         self.value = value
 
     def __str__(self):
-        print(f"inside LS{self.value}")
         return self.value
 
 
@@ -86,4 +82,4 @@ class LiteralBoolean(object):
         self.value = value
 
     def __str__(self):
-        return self.value
+        return str(self.value)

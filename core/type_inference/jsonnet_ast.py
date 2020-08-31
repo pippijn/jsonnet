@@ -84,6 +84,9 @@ class LiteralNumber(AST):
 class LiteralNull(AST):
     def __init__(self, location=None):
         super().__init__(location)
+    
+    def __str__(self):
+        return 'None'
 
 
 class LiteralString(AST):
@@ -147,6 +150,9 @@ class Index(AST):
         super().__init__(location)
         self.target = target
         self.index = index
+
+    def __str__(self):
+        return f'{self.target}.{self.index}'
 
 
 class Self(AST):
@@ -218,6 +224,7 @@ class Location:
     def __str__(self):
         loc_str = f'Location({self.begin}, {str(self.end)})'
         return loc_str
+
 
 class ObjectComprehensionSimple(AST):
     pass

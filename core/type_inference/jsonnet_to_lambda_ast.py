@@ -95,12 +95,13 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
             raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.LiteralBoolean):
-        return ast_.value
+        return LiteralBoolean(ast_.value)
 
     elif isinstance(ast_, ast.LiteralNumber):
-        return ast_.value
+        return LiteralNumber(ast_.value)
 
     elif isinstance(ast_, ast.LiteralString):
+        # return LiteralString(ast_.value)
         return ast_.value
 
     elif isinstance(ast_, ast.LiteralNull):
