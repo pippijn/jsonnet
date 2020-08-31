@@ -68,28 +68,31 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         return Apply(ast_.fn, ast_.argv)
 
     elif isinstance(ast_, ast.Array):
-        pass  # add to lambda AST
+        raise Exception('Not translated yet!\n')  # add to lambda AST
 
-    # elif isinstance(ast_, ast.Binary):
-    #     pass
+    elif isinstance(ast_, ast.BinaryOp):
+        raise Exception('Not translated yet!\n')
 
-    # elif isinstance(ast_, ast.BuiltInFunction):
-    #     pass
+    elif isinstance(ast_, ast.BuiltinFunction):
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.Conditional):
-        pass
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.Error):
-        pass
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.Function):
-        pass
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.InSuper):
-        pass
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.Index):
-        pass
+        if isinstance(ast_.target, ast.Self) and isinstance(ast_.index, ast.LiteralString):
+            return Identifier(ast_.index.value)
+        else: 
+            raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.LiteralBoolean):
         return ast_.value
@@ -103,23 +106,25 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
     elif isinstance(ast_, ast.LiteralNull):
         return Letrec("null", Identifier("null"), Identifier("null"))
 
-    # elif isinstance(ast_, ast.ObjectComprehensionSimple):
-    #     pass
+    elif isinstance(ast_, ast.ObjectComprehensionSimple):
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.Self):
-        pass
+        return Identifier("self")
+        # raise Exception('Not translated yet!\n')
 
-    # elif isinstance(ast_, ast.SuperIndex):
-    #     pass
+    elif isinstance(ast_, ast.SuperIndex):
+        raise Exception('Not translated yet!\n')
 
-    # elif isinstance(ast_, ast.Unary):
-    #     pass
+    elif isinstance(ast_, ast.UnaryOp):
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.Var):
         return Identifier(ast_.id)
 
     else:
-        pass
+        print(ast_.__class__)
+        raise Exception('Node is not found in jsonnet_ast\n')
 
 
 def read_ast(filename):
@@ -135,7 +140,8 @@ def parse_ast(ast_str):
 def create_init_env():
     init_env = {}
     init_env["__record_count__"] = 0
-    init_env["None"] = TypeVariable
+    init_env["None"] = TypeVariable 
+    init_env["self"] = TypeVariable
     return init_env
 
 
@@ -144,9 +150,8 @@ if __name__ == "__main__":
     print(f"AST: {ast_str}")
     ast_ = parse_ast(ast_str)
     print(ast_)
-    
+
     env = create_init_env()
     res = translate_to_lambda_ast(ast_, env)
     print(res)
     hm_algo.try_exp(env, res)
-

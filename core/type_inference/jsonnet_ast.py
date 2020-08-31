@@ -1,6 +1,7 @@
 class AST(object):
     def __init__(self, location):
-        self.location = location
+        if location:
+            self.location = location
 
 
 class Object(AST):
@@ -33,10 +34,11 @@ class Var(AST):
     def __init__(self, location, id):
         super().__init__(location)
         self.id = id
-    
+
     def __str__(self):
         var_str = f'Var({self.id})'
         return var_str
+
 
 class Conditional(AST):
     def __init__(self, location, cond, branchTrue: AST, branchFalse: AST):
@@ -65,7 +67,7 @@ class LiteralBoolean(AST):
     def __init__(self, location, value):
         super().__init__(location)
         self.value = value
-    
+
     def __str__(self):
         return f'{self.value}'
 
@@ -74,13 +76,13 @@ class LiteralNumber(AST):
     def __init__(self, location, value):
         super().__init__(location)
         self.value = value
-    
+
     def __str__(self):
         return f'{self.value}'
 
 
 class LiteralNull(AST):
-    def __init__(self, location):
+    def __init__(self, location=None):
         super().__init__(location)
 
 
@@ -88,7 +90,7 @@ class LiteralString(AST):
     def __init__(self, location, value):
         super().__init__(location)
         self.value = value
-    
+
     def __str__(self):
         return self.value
 
@@ -97,7 +99,7 @@ class Array(AST):
     def __init__(self, location, elements):
         super().__init__(location)
         self.elements = elements
-    
+
     def __str__(self):
         arr_str = '['
         for e in self.elements:
@@ -111,7 +113,7 @@ class Apply(AST):
         super().__init__(location)
         self.fn = fn
         self.arguments = argv
-    
+
     def __str__(self):
         arr_str = f'Apply({self.fn}'
         for arg in self.arguments:
@@ -150,7 +152,7 @@ class Index(AST):
 class Self(AST):
     def __init__(self, location):
         super().__init__(location)
-    
+
     def __str__(self):
         return 'self'
 
@@ -158,9 +160,18 @@ class Self(AST):
 class Super(AST):
     def __init__(self, location):
         super().__init__(location)
-    
+
     def __str__(self):
         return 'super'
+
+
+class SuperIndex(AST):
+    def __init__(self, location, index):
+        super().__init__(location)
+        self.index = index
+
+    def __str__(self):
+        return f'super.{str(self.index)}'
 
 
 class InSuper(AST):
@@ -189,21 +200,24 @@ class ArgParam:
             arg_str += f'{delim}{str(self.expr)}'
         return arg_str
 
+
 class Bind:
     def __init__(self, var, body):
         self.var = var
         self.body = body
-    
+
     def __str__(self):
-        bind_str = f'Bind({self.var}, {str(self.body)})' 
+        bind_str = f'Bind({self.var}, {str(self.body)})'
         return bind_str
 
 
 class Location:
     def __init__(self, location):
-        # string with structure <line>:<column>
         self.begin, self.end = location.split(',')
-    
+
     def __str__(self):
-        loc_str = f'Location({self.begin}, {str(self.end)})' 
+        loc_str = f'Location({self.begin}, {str(self.end)})'
         return loc_str
+
+class ObjectComprehensionSimple(AST):
+    pass

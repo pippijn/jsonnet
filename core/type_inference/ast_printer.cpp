@@ -42,7 +42,7 @@ std::ostream &operator<<(std::ostream &out, const Local::Bind& bind)
 {
     UString std = decode_utf8("std");
     if (bind.var->name == std) {// TODO: decide what to do with std-bind
-        out << "ast.Bind(\"std\", {})";
+        out << "ast.Bind(\"std\", ast.LiteralNull())";
         return out;
     }
     out << "ast.Bind(";
@@ -99,7 +99,7 @@ std::ostream &operator<<(std::ostream &out, const Binary *ast)
 
 std::ostream &operator<<(std::ostream &out, const BuiltinFunction *ast)
 {
-    out << "ast.BuiltInFunction(";
+    out << "ast.BuiltinFunction(";
     out << &ast->location;
     out << ",";
     out << ast->name;
@@ -533,7 +533,7 @@ const char *examples(int example)
             res = R""""(
                 {
                     a: 2,
-                    b: a,
+                    b: self.a,
                 }
             )"""";
             break;    
