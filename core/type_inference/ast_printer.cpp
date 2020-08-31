@@ -41,8 +41,10 @@ std::ostream &operator<<(std::ostream &out, const ArgParam arg_param)
 std::ostream &operator<<(std::ostream &out, const Local::Bind& bind)
 {
     UString std = decode_utf8("std");
-    if (bind.var->name == std) // TODO: decide what to do with std-bind
+    if (bind.var->name == std) {// TODO: decide what to do with std-bind
+        out << "ast.Bind(\"std\", {})";
         return out;
+    }
     out << "ast.Bind(";
     out << "var=\"";
     out << bind.var;
@@ -155,7 +157,7 @@ std::ostream &operator<<(std::ostream &out, const Local *ast)
     out << &ast->location;
     out << ",";
     out << ast->body;
-    for (const Local::Bind& bind : ast->binds) {
+    for (const Local::Bind &bind : ast->binds) {
         out << ",";
         out << bind;
     }
@@ -516,6 +518,17 @@ const char *examples(int example)
                 }
             )"""";
             break;
+        case 12:
+            res = R""""(
+                {
+                    a: {
+                        local var = $["b"],
+                        c: var 
+                    },
+                    b: 2
+                }
+            )"""";
+            break;
         default: break;
     }
     return res;
@@ -523,7 +536,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(11);
+    const char *input = examples(12);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("", input);
