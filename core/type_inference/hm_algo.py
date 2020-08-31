@@ -9,7 +9,7 @@
 """
 
 from __future__ import print_function
-from lambda_ast import Lambda, Let, Letrec, Apply, Identifier
+from lambda_ast import *
 from lambda_types import *
 
 
@@ -72,17 +72,22 @@ def analyse(node, env, non_generic=None):
         non_generic = set()
 
     if isinstance(node, Identifier):
-        # print(f'indentifier: {node}')
         result_type = get_type(node.name, env, non_generic)
-        # print(f'indentifier: {result_type}')
+        return result_type
+    elif isinstance(node, LiteralNumber):
+        result_type = Number
+        return result_type
+    elif isinstance(node, LiteralBoolean):
+        result_type = Bool
+        return result_type
+    elif isinstance(node, LiteralString):
+        result_type = String
         return result_type
     elif isinstance(node, Apply):
-        # print(f'apply: {node}')
         fun_type = analyse(node.fn, env, non_generic)
         arg_type = analyse(node.arg, env, non_generic)
         result_type = TypeVariable()
         unify(Function(arg_type, result_type), fun_type)
-        # print(f'apply: {result_type}')
         return result_type
     elif isinstance(node, Lambda):
         arg_type = TypeVariable()
@@ -93,11 +98,9 @@ def analyse(node, env, non_generic=None):
         result_type = analyse(node.body, new_env, new_non_generic)
         return Function(arg_type, result_type)
     elif isinstance(node, Let):
-        # print(f'let: {node}')
         defn_type = analyse(node.defn, env, non_generic)
         new_env = env.copy()
         new_env[node.v] = defn_type
-        #print(f'let: {result_type}')
         return analyse(node.body, new_env, non_generic)
     elif isinstance(node, Letrec):
         new_type = TypeVariable()
@@ -108,14 +111,6 @@ def analyse(node, env, non_generic=None):
         defn_type = analyse(node.defn, new_env, new_non_generic)
         unify(new_type, defn_type)
         return analyse(node.body, new_env, non_generic)
-    elif node is None:
-        # print(f'indentifier: {node}')
-        result_type = get_type("None", env, non_generic)
-        # print(f'indentifier: {result_type}')
-        return result_type
-    elif isinstance(node, int):
-        result_type = Number
-        return result_type
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
 
@@ -133,8 +128,6 @@ def get_type(name, env, non_generic):
     """
     if name in env:
         return fresh(env[name], non_generic)
-    elif is_number_literal(name):
-        return Number
     else:
         raise ParseError("Undefined symbol {0}".format(name))
 
@@ -234,7 +227,6 @@ def prune(t):
         if t.instance is not None:
             t.instance = prune(t.instance)
             return t.instance
-    # print('prune: ', t)
     return t
 
 
@@ -288,23 +280,6 @@ def occurs_in(t, types):
         True if t occurs in any of types, otherwise False
     """
     return any(occurs_in_type(t, t2) for t2 in types)
-
-
-def is_number_literal(name):
-    """Checks whether name is an number literal string.
-
-    Args:
-        name: The identifier to check
-
-    Returns:
-        True if name is an number literal, otherwise False
-    """
-    result = True
-    try:
-        int(name)
-    except ValueError:
-        result = False
-    return result
 
 
 # ==================================================================#
