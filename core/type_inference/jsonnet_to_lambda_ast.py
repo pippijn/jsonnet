@@ -5,7 +5,7 @@ from lambda_types import *
 import hm_algo
 
 
-def build_record(fields):
+def build_record_type_constructor(fields):
     type_var = {}
     field_type = {}
     for i, field in enumerate(fields):
@@ -23,24 +23,23 @@ def build_record(fields):
     return rec_build(0, len(type_var), type_var, record_type)
 
 
-def get_record_id_in_env(env):
-    # if "record" not in env:
-    #     env["record"] = {}
-    # record_id = "record{n}".format(n=len(env["record"]))
-    return "record0"
+def get_next_record_id(env):
+    record_id = "record_{n}".format(n=env["__record_count__"])
+    env["__record_count__"] += 1
+    return record_id
 
 
 def build_let_body(keys, record_id, env):
     if not keys:
         return Identifier(record_id)
     key = translate_to_lambda_ast(keys[0], env)
-    return Apply(build_let_body(keys[1:], record_id, env), Identifier(key)) 
+    return Apply(build_let_body(keys[1:], record_id, env), Identifier(key))
 
 
 def translate_to_lambda_ast(ast_: ast.AST, my_env):
     if isinstance(ast_, ast.Object):
-        record = build_record(ast_.fields)
-        record_id = get_record_id_in_env(my_env)
+        record = build_record_type_constructor(ast_.fields)
+        record_id = get_next_record_id(my_env)
         my_env[record_id] = record
 
         # create let object
@@ -133,15 +132,21 @@ def parse_ast(ast_str):
     return eval(ast_str)
 
 
+def create_init_env():
+    init_env = {}
+    init_env["__record_count__"] = 0
+    init_env["None"] = TypeVariable
+    return init_env
+
+
 if __name__ == "__main__":
     ast_str = read_ast("core/type_inference/ast_string.txt")
     print(f"AST: {ast_str}")
     ast_ = parse_ast(ast_str)
     print(ast_)
-    env = {"None": TypeVariable()}
+    
+    env = create_init_env()
     res = translate_to_lambda_ast(ast_, env)
     print(res)
-    print("env", env)
     hm_algo.try_exp(env, res)
-
 
