@@ -75,9 +75,9 @@ class Array(AST):
 
 
 class Apply(AST):
-    def __init__(self, location, func, *argv):
+    def __init__(self, location, fn, *argv):
         super().__init__(location)
-        self.func = func
+        self.fn = fn
         self.arguments = argv
 
 
