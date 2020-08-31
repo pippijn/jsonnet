@@ -10,10 +10,11 @@
 
 from __future__ import print_function
 from lambda_ast import Lambda, Let, Letrec, Apply, Identifier
+from lambda_types import *
+
 
 # =======================================================#
 # Exception types
-
 
 class InferenceError(Exception):
     """Raised if the type inference algorithm cannot infer types successfully"""
@@ -40,94 +41,6 @@ class ParseError(Exception):
 
 
 # =======================================================#
-# Types and type constructors
-
-class TypeVariable(object):
-    """A type variable standing for an arbitrary type.
-
-    All type variables have a unique id, but names are only assigned lazily,
-    when required.
-    """
-
-    next_variable_id = 0
-
-    def __init__(self):
-        self.id = TypeVariable.next_variable_id
-        TypeVariable.next_variable_id += 1
-        self.instance = None
-        self.__name = None
-
-    next_variable_name = 'a'
-
-    @property
-    def name(self):
-        """Names are allocated to TypeVariables lazily, so that only TypeVariables
-        present after analysis consume names.
-        """
-        if self.__name is None:
-            self.__name = TypeVariable.next_variable_name
-            TypeVariable.next_variable_name = chr(
-                ord(TypeVariable.next_variable_name) + 1)
-        return self.__name
-
-    def __str__(self):
-        if self.instance is not None:
-            return str(self.instance)
-        else:
-            return self.name
-
-    def __repr__(self):
-        return "TypeVariable(id = {0})".format(self.id)
-
-
-class TypeRowOperator(object):
-    """An n-ary type constructor which builds a new type from old"""
-
-    def __init__(self, fields):
-        self.fields = fields
-
-    def __str__(self):
-        num_types = len(self.fields)
-
-        if num_types == 0:
-            return '{}'
-
-        name_type_pairs = [f"{x[0]}: {x[1]}" for x in self.fields.items()]
-
-        return "{{{0}}}".format(', '.join(name_type_pairs))
-
-
-class TypeOperator(object):
-    """An n-ary type constructor which builds a new type from old"""
-
-    def __init__(self, name, types):
-        self.name = name
-        self.types = types
-
-    def __str__(self):
-        num_types = len(self.types)
-        if num_types == 0:
-            return self.name
-        elif num_types == 2:
-            return "({0} {1} {2})".format(str(self.types[0]), self.name, str(self.types[1]))
-        else:
-            return "{0} {1}" .format(self.name, ' '.join(self.types))
-
-
-class Function(TypeOperator):
-    """A binary type constructor which builds function types"""
-
-    def __init__(self, from_type, to_type):
-        super(Function, self).__init__("->", [from_type, to_type])
-
-
-# Basic types are constructed with a nullary type constructor
-Integer = TypeOperator("int", [])  # Basic integer
-Bool = TypeOperator("bool", [])  # Basic bool
-String = TypeOperator("string", [])  # string
-
-
-# =======================================================#
 # Type inference machinery
 
 def analyse(node, env, non_generic=None):
@@ -151,7 +64,7 @@ def analyse(node, env, non_generic=None):
 
     Raises:
         InferenceError: The type of the expression could not be inferred, for example
-            if it is not possible to unify two types such as Integer and Bool
+            if it is not possible to unify two types such as Number and Bool
         ParseError: The abstract syntax tree rooted at node could not be parsed
     """
 
@@ -212,8 +125,8 @@ def get_type(name, env, non_generic):
     """
     if name in env:
         return fresh(env[name], non_generic)
-    elif is_integer_literal(name):
-        return Integer
+    elif is_number_literal(name):
+        return Number
     else:
         raise ParseError("Undefined symbol {0}".format(name))
 
@@ -369,14 +282,14 @@ def occurs_in(t, types):
     return any(occurs_in_type(t, t2) for t2 in types)
 
 
-def is_integer_literal(name):
-    """Checks whether name is an integer literal string.
+def is_number_literal(name):
+    """Checks whether name is an number literal string.
 
     Args:
         name: The identifier to check
 
     Returns:
-        True if name is an integer literal, otherwise False
+        True if name is an number literal, otherwise False
     """
     result = True
     try:
@@ -422,31 +335,21 @@ def main():
 
     var1 = TypeVariable()
     var2 = TypeVariable()
+
     record_type_2 = TypeRowOperator({'x': var1, 'y': var2})
-
-    var3 = TypeVariable()
-    var4 = TypeVariable()
-    # var5 = TypeVariable()
-
-    my_env = {"record": Function(var1, Function(var2, record_type_2)),
-              "true": Bool,
-              "cond": Function(Bool, Function(var3, Function(var3, var3))),
-              "zero": Function(Integer, Bool),
-              "pred": Function(Integer, Integer),
-              "times": Function(Integer, Function(Integer, Integer)),
-              "eq": Function(var4, Function(var4, Bool)),
-              }
-
     null = Letrec("null", Identifier("null"), Identifier("null"))
 
-    examples = {
+    my_env = {
+        "record": Function(var1, Function(var2, record_type_2)),
+        "true": Bool,
+    }
 
+    examples = {
         # eq: a -> (a-> bool)
-        # Apply(Apply(Identifier("eq"), Identifier("true")), Identifier("2")),
+        Apply(Apply(Identifier("eq"), Identifier("true")), Identifier("2")),
 
         # null example
-        # Apply(Apply(Identifier("times"), null), null),
-
+        Apply(Apply(Identifier("times"), null), null),
 
         # object with local variable z
         Let("z",
@@ -456,8 +359,8 @@ def main():
                 Let("y",
                     Identifier("true"),
                     Apply(Apply(Identifier("record"),
-                                Identifier("x")),
-                          Identifier("y"))))),
+                                Identifier("y")),
+                          Identifier("x"))))),
 
         # simple object withput internal local variables
         Let("x",
@@ -465,8 +368,8 @@ def main():
             Let("y",
                 Identifier("x"),
                 Apply(Apply(Identifier("record"),
-                            Identifier("x")),
-                      Identifier("y")))),
+                            Identifier("y")),
+                      Identifier("x")))),
 
         # cyclic declaration
         Let("x",
@@ -474,8 +377,8 @@ def main():
             Let("y",
                 Identifier("x"),
                 Apply(Apply(Identifier("record"),
-                            Identifier("x")),
-                      Identifier("y")))),
+                            Identifier("y")),
+                      Identifier("x")))),
 
     }
 
