@@ -32,8 +32,8 @@ def get_next_record_id(env):
 def build_let_body(keys, record_id, env):
     if not keys:
         return Identifier(record_id)
-    key = translate_to_lambda_ast(keys[0], env, only_str=True)
-    return Apply(build_let_body(keys[1:], record_id, env), Identifier(key))
+    key = translate_to_lambda_ast(keys[-1], env, only_str=True)
+    return Apply(build_let_body(keys[:-1], record_id, env), Identifier(key))
 
 
 def translate_to_lambda_ast(ast_: ast.AST, my_env, **kwargs):
