@@ -32,11 +32,11 @@ def get_next_record_id(env):
 def build_let_body(keys, record_id, env):
     if not keys:
         return Identifier(record_id)
-    key = translate_to_lambda_ast(keys[0], env)
+    key = translate_to_lambda_ast(keys[0], env, only_str=True)
     return Apply(build_let_body(keys[1:], record_id, env), Identifier(key))
 
 
-def translate_to_lambda_ast(ast_: ast.AST, my_env):
+def translate_to_lambda_ast(ast_: ast.AST, my_env, **kwargs):
     if isinstance(ast_, ast.Object):
         record = build_record_type_constructor(ast_.fields)
         record_id = get_next_record_id(my_env)
@@ -47,7 +47,7 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
             if not keys:
                 return body
             translated_body = translate_to_lambda_ast(fields[keys[0]], my_env)
-            translated_id = translate_to_lambda_ast(keys[0], my_env)
+            translated_id = translate_to_lambda_ast(keys[0], my_env, only_str=True)
             return Let(translated_id, translated_body, process_fields(keys[1:], fields, body))
 
         field_keys = list(ast_.fields.keys())
@@ -101,8 +101,9 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         return LiteralNumber(ast_.value)
 
     elif isinstance(ast_, ast.LiteralString):
-        # return LiteralString(ast_.value)
-        return ast_.value
+        if 'only_str' in kwargs and kwargs.get('only_str'):
+            return ast_.value
+        return LiteralString(ast_.value)
 
     elif isinstance(ast_, ast.LiteralNull):
         return Letrec("null", Identifier("null"), Identifier("null"))
@@ -112,7 +113,6 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
 
     elif isinstance(ast_, ast.Self):
         return Identifier("self")
-        # raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.SuperIndex):
         raise Exception('Not translated yet!\n')
