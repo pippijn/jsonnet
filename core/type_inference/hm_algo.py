@@ -118,7 +118,7 @@ def analyse(node, env, non_generic=None):
             new_type = TypeVariable()
             new_env[v] = new_type
             new_non_generic.add(new_type)
-        
+
         for v, defn in node.bindings.items():
             v_type = new_env[v]
             defn_type = analyse(defn, new_env, new_non_generic)
@@ -279,6 +279,8 @@ def occurs_in_type(v, type2):
         return True
     elif isinstance(pruned_type2, TypeOperator):
         return occurs_in(v, pruned_type2.types)
+    elif isinstance(pruned_type2, TypeRowOperator):
+        return occurs_in(v, pruned_type2.fields.values())
     return False
 
 
@@ -368,7 +370,7 @@ def main():
         # cyclic declaration
         # Letrec(x=y and y=x in pair(x,y)) : (var1, var1)
         LetrecAnd({"x": Identifier("y"), "y": Identifier("x")}, Apply(Apply(Identifier("record"),
-            Identifier("x")), Identifier("y")))
+                                                                            Identifier("x")), Identifier("y")))
 
     }
 
