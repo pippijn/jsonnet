@@ -13,7 +13,6 @@ class Identifier(object):
     """Identifier"""
 
     def __init__(self, name):
-        assert(isinstance(name, str))
         self.name = name
 
     def __str__(self):
@@ -53,6 +52,21 @@ class Letrec(object):
 
     def __str__(self):
         return "(letrec {v} = {defn} in {body})".format(v=self.v, defn=self.defn, body=self.body)
+
+
+class LetrecAnd(object):
+    """Letrec binding"""
+
+    def __init__(self, bindings, body):
+        self.bindings = bindings
+        self.body = body
+
+    def __str__(self):
+        str_view = 'letrec_and {'
+        for v, defn in self.bindings.items():
+            str_view += f'{v}: {defn}, '
+        str_view += ('} in ' + str(self.body))
+        return str_view
 
 
 class LiteralNumber(object):

@@ -111,6 +111,19 @@ def analyse(node, env, non_generic=None):
         defn_type = analyse(node.defn, new_env, new_non_generic)
         unify(new_type, defn_type)
         return analyse(node.body, new_env, non_generic)
+    elif isinstance(node, LetrecAnd):
+        new_env = env.copy()
+        new_non_generic = non_generic.copy()
+        for v in node.bindings:
+            new_type = TypeVariable()
+            new_env[v] = new_type
+            new_non_generic.add(new_type)
+        
+        for v, defn in node.bindings.items():
+            v_type = new_env[v]
+            defn_type = analyse(defn, new_env, new_non_generic)
+            unify(v_type, defn_type)
+        return analyse(node.body, new_env, non_generic)
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
 
@@ -325,29 +338,27 @@ def main():
     my_env = {
         "record": Function(var1, Function(var2, record_type_2)),
         "true": Bool,
+        "times": Function(Number, Function(Number, Number)),
     }
 
     examples = {
-        # eq: a -> (a-> bool)
-        Apply(Apply(Identifier("eq"), Identifier("true")), Identifier("2")),
-
         # null example
         Apply(Apply(Identifier("times"), null), null),
 
         # object with local variable z
         Let("z",
-            Identifier("5"),
+            LiteralNumber(5),
             Let("x",
                 Identifier("z"),
                 Let("y",
                     Identifier("true"),
                     Apply(Apply(Identifier("record"),
-                                Identifier("y")),
-                          Identifier("x"))))),
+                                Identifier("x")),
+                          Identifier("y"))))),
 
         # simple object withput internal local variables
         Let("x",
-            Identifier("3"),
+            LiteralNumber(3),
             Let("y",
                 Identifier("x"),
                 Apply(Apply(Identifier("record"),
@@ -355,13 +366,9 @@ def main():
                       Identifier("x")))),
 
         # cyclic declaration
-        Let("x",
-            Identifier("y"),
-            Let("y",
-                Identifier("x"),
-                Apply(Apply(Identifier("record"),
-                            Identifier("y")),
-                      Identifier("x")))),
+        # Letrec(x=y and y=x in pair(x,y)) : (var1, var1)
+        LetrecAnd({"x": Identifier("y"), "y": Identifier("x")}, Apply(Apply(Identifier("record"),
+            Identifier("x")), Identifier("y")))
 
     }
 
