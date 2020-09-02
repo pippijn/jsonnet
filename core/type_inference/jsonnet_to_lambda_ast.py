@@ -29,11 +29,28 @@ def get_next_record_id(env):
     return record_id
 
 
-def build_let_body(keys, record_id, env):
+def apply_record(keys, record_id, env):
     if not keys:
         return Identifier(record_id)
     key = translate_to_lambda_ast(keys[-1], env, only_str=True)
-    return Apply(build_let_body(keys[:-1], record_id, env), Identifier(key))
+    return Apply(apply_record(keys[:-1], record_id, env), Identifier(key))
+
+# create LetrecAnd object
+def build_letrec_and(keys, fields, body, env):
+    translated_fields = {}
+    for key in keys:
+        translated_id = translate_to_lambda_ast(key, env, only_str=True)
+        translated_body = translate_to_lambda_ast(fields[key], env)
+        translated_fields[translated_id] = translated_body
+    return LetrecAnd(translated_fields, body)
+
+# create Let object
+def build_let(keys, fields, body, env):
+    if not keys:
+        return body
+    translated_body = translate_to_lambda_ast(fields[keys[0]], env)
+    translated_id = translate_to_lambda_ast(keys[0], env, only_str=True)
+    return Let(translated_id, translated_body, build_let(keys[1:], fields, body, env))
 
 
 def translate_to_lambda_ast(ast_: ast.AST, my_env, **kwargs):
@@ -42,17 +59,9 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env, **kwargs):
         record_id = get_next_record_id(my_env)
         my_env[record_id] = record
 
-        # create let object
-        def process_fields(keys, fields, body):
-            if not keys:
-                return body
-            translated_body = translate_to_lambda_ast(fields[keys[0]], my_env)
-            translated_id = translate_to_lambda_ast(keys[0], my_env, only_str=True)
-            return Let(translated_id, translated_body, process_fields(keys[1:], fields, body))
-
         field_keys = list(ast_.fields.keys())
-        let_body = build_let_body(field_keys, record_id, my_env)
-        res = process_fields(field_keys, ast_.fields, let_body)
+        let_body = apply_record(field_keys, record_id, my_env)
+        res = build_letrec_and(field_keys, ast_.fields, let_body, my_env)
         return res
 
     elif isinstance(ast_, ast.Local):
