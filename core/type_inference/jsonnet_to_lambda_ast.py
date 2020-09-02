@@ -29,39 +29,49 @@ def get_next_record_id(env):
     return record_id
 
 
-def apply_record(keys, record_id, env):
-    if not keys:
+def apply_record(names, record_id, env):
+    if not names:
         return Identifier(record_id)
-    key = translate_to_lambda_ast(keys[-1], env, only_str=True)
-    return Apply(apply_record(keys[:-1], record_id, env), Identifier(key))
+    name = translate_field_name(names[-1])
+    return Apply(apply_record(names[:-1], record_id, env), Identifier(name))
+
 
 # create LetrecAnd object
-def build_letrec_and(keys, fields, body, env):
+def build_letrec_and(names, fields, body, env):
     translated_fields = {}
-    for key in keys:
-        translated_id = translate_to_lambda_ast(key, env, only_str=True)
-        translated_body = translate_to_lambda_ast(fields[key], env)
+    for name in names:
+        translated_id = translate_field_name(name)
+        translated_body = translate_to_lambda_ast(fields[name], env)
         translated_fields[translated_id] = translated_body
     return LetrecAnd(translated_fields, body)
 
+
+def translate_field_name(name):
+    if isinstance(name, ast.LiteralString):
+        return name.value
+    else:
+        raise Exception(
+            f"Expected type LiteralString but got {name.__class__}")
+
+
 # create Let object
-def build_let(keys, fields, body, env):
-    if not keys:
+def build_let(names, fields, body, env):
+    if not names:
         return body
-    translated_body = translate_to_lambda_ast(fields[keys[0]], env)
-    translated_id = translate_to_lambda_ast(keys[0], env, only_str=True)
-    return Let(translated_id, translated_body, build_let(keys[1:], fields, body, env))
+    translated_body = translate_to_lambda_ast(fields[names[0]], env)
+    translated_id = translate_field_name(names[0])
+    return Let(translated_id, translated_body, build_let(names[1:], fields, body, env))
 
 
-def translate_to_lambda_ast(ast_: ast.AST, my_env, **kwargs):
+def translate_to_lambda_ast(ast_: ast.AST, my_env):
     if isinstance(ast_, ast.Object):
         record = build_record_type_constructor(ast_.fields)
         record_id = get_next_record_id(my_env)
         my_env[record_id] = record
 
-        field_keys = list(ast_.fields.keys())
-        let_body = apply_record(field_keys, record_id, my_env)
-        res = build_letrec_and(field_keys, ast_.fields, let_body, my_env)
+        field_names = list(ast_.fields.keys())
+        let_body = apply_record(field_names, record_id, my_env)
+        res = build_letrec_and(field_names, ast_.fields, let_body, my_env)
         return res
 
     elif isinstance(ast_, ast.Local):
@@ -100,7 +110,7 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env, **kwargs):
     elif isinstance(ast_, ast.Index):
         if isinstance(ast_.target, ast.Self) and isinstance(ast_.index, ast.LiteralString):
             return Identifier(ast_.index.value)
-        else: 
+        else:
             raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.LiteralBoolean):
@@ -110,8 +120,6 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env, **kwargs):
         return LiteralNumber(ast_.value)
 
     elif isinstance(ast_, ast.LiteralString):
-        if 'only_str' in kwargs and kwargs.get('only_str'):
-            return ast_.value
         return LiteralString(ast_.value)
 
     elif isinstance(ast_, ast.LiteralNull):
@@ -150,7 +158,7 @@ def parse_ast(ast_str):
 def create_init_env():
     init_env = {}
     init_env["__record_count__"] = 0
-    init_env["None"] = TypeVariable 
+    init_env["None"] = TypeVariable
     init_env["self"] = TypeVariable
     return init_env
 
