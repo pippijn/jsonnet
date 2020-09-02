@@ -1,11 +1,3 @@
-
-// Sample output of print_ast function
-// print_ast(desugar(parse(allocator, lex('if 2 == 3 then "hello" else 55'))))
-// =>
-// ast.Conditional(
-// ast.BinaryOp("==", ast.Integer("2"), ast.Integer("3")),
-// …,
-
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -539,16 +531,9 @@ const char *examples(int example)
             break;    
         case 14:
             res = R""""( 
-               {
-                    person1:: {
-                        name: "Alice",
-                        l: 1
-                    },
-                    person3:: {
-                        age: 13,
-                        l: 2
-                    },
-                    person2: self.person1 + self.person3 + { name: "Bob"},
+                {
+                    a: "lala",
+                    person1: { 'name': 1},
                 }
             )"""";
             break;    
@@ -559,7 +544,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(13);
+    const char *input = examples(14);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("", input);
