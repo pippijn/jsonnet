@@ -554,7 +554,23 @@ const char *examples(int example)
                     c: l 
                 }
             )"""";
-            break;            
+            break; 
+        case 17:
+            res = R""""( 
+                {
+                    local a = 'yes',
+                    b: {
+                        c: {
+                            a: 5,
+                            d: a,
+                        },
+                        k: {
+                            d: a,
+                        }
+                    }
+                }
+            )"""";
+            break;                
         default: break;
     }
     return res;
@@ -562,7 +578,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(16);
+    const char *input = examples(17);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("", input);

@@ -70,18 +70,20 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         my_env[record_id] = record
 
         field_names = list(ast_.fields.keys())
-        let_body = apply_record(field_names, record_id, my_env)
-        res = build_letrec_and(field_names, ast_.fields, let_body, my_env)
-        return res
+        body = apply_record(field_names, record_id, my_env)
+        return build_letrec_and(field_names, ast_.fields, body, my_env)
 
     elif isinstance(ast_, ast.Local):
-        def process_binds(binds, body):
-            if not binds:
-                return body
-            translated_body = translate_to_lambda_ast(binds[0].body, my_env)
-            return Let(binds[0].var, translated_body, process_binds(binds[1:], body))
+        bind_dic = {}
+        for bind in ast_.binds:
+            translated_body = translate_to_lambda_ast(bind.body, my_env)
+            bind_dic[bind.var] = translated_body
         body = translate_to_lambda_ast(ast_.body, my_env)
-        return process_binds(ast_.binds, body)
+        if isinstance(body, LetrecAnd):
+            body.bindings.update(bind_dic)
+            return body
+        else:
+            return LetrecAnd(bind_dic, body)
 
     elif isinstance(ast_, ast.Apply):
         return Apply(ast_.fn, ast_.argv)
