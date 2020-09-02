@@ -118,7 +118,6 @@ def analyse(node, env, non_generic=None):
             new_type = TypeVariable()
             new_env[v] = new_type
             new_non_generic.add(new_type)
-
         for v, defn in node.bindings.items():
             v_type = new_env[v]
             defn_type = analyse(defn, new_env, new_non_generic)
@@ -369,8 +368,36 @@ def main():
 
         # cyclic declaration
         # Letrec(x=y and y=x in pair(x,y)) : (var1, var1)
-        LetrecAnd({"x": Identifier("y"), "y": Identifier("x")}, Apply(Apply(Identifier("record"),
-                                                                            Identifier("x")), Identifier("y")))
+        LetrecAnd(
+            {
+                "x": Identifier("y"), 
+                "y": Identifier("x")
+            }, 
+            Apply(
+                Apply(
+                    Identifier("record"),
+                    Identifier("x")
+                ),
+                Identifier("y")
+            )
+        ),
+
+        LetrecAnd(
+            {
+                "x": Identifier("z"), 
+                "z": Identifier("m"),
+                "m": Identifier("k"),
+                "y": LiteralString("3"),
+                "k": LiteralNumber(5),
+            }, 
+            Apply(
+                Apply(
+                    Identifier("record"),
+                    Identifier("x")
+                ),
+                Identifier("y")
+            )
+        ),
 
     }
 
