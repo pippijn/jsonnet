@@ -123,7 +123,7 @@ def analyse(node, env, non_generic=None):
             v_type = new_env[v]
             defn_type = analyse(defn, new_env, new_non_generic)
             unify(v_type, defn_type)
-        return analyse(node.body, new_env, non_generic)
+        return analyse(node.body, new_env, new_non_generic)
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
 
