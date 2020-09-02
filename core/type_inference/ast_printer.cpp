@@ -436,7 +436,7 @@ const char *examples(int example)
             res = R""""(
                 local person(name) = {
                     name: name,
-                    welcome: 'Hello ' + name + '!',
+                    welcome: 'Hello ' + name + 3,
                 }; 
                 {}
             )"""";
@@ -536,7 +536,25 @@ const char *examples(int example)
                     person1: { 'name': 1},
                 }
             )"""";
-            break;    
+            break; 
+        case 15:
+            res = R""""( 
+                {
+                    a: self.b,
+                    b: self.a,
+                }
+            )"""";
+            break;
+        case 16:
+            res = R""""( 
+                {
+                    local l = a, 
+                    local a = self.b, 
+                    b: 2, 
+                    c: l 
+                }
+            )"""";
+            break;            
         default: break;
     }
     return res;
@@ -544,7 +562,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(14);
+    const char *input = examples(16);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("", input);
