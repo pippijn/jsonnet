@@ -63,6 +63,109 @@ def build_let(names, fields, body, env):
     return Let(translated_id, translated_body, build_let(names[1:], fields, body, env))
 
 
+def rename_local(ast_: ast.AST, name_env: dict):
+    if isinstance(ast_, ast.Object):
+        print('Object:', name_env)
+        for _, field_value in ast_.fields.items():
+            rename_local(field_value, name_env)
+
+    elif isinstance(ast_, ast.Local):
+        print('Local:', name_env)
+        all_bind_names = {}
+        for bind in ast_.binds:
+            all_bind_names[bind.var] = 'local_' + rename(bind.var)
+        print(f'all_bind_names: {all_bind_names}')
+        for bind in ast_.binds:
+            print(f'bind_var: {bind.var}')
+            new_name_env = name_env.copy()
+            key = bind.var
+            temp_value = all_bind_names.pop(key)
+            if key in name_env:
+                all_bind_names[key] = name_env[key]
+            new_name_env.update(all_bind_names)
+            print(f'current new_name_env: {new_name_env}')
+            rename_local(bind.body, new_name_env)
+            all_bind_names[key] = temp_value
+            bind.var = temp_value
+        
+        new_name_env = name_env.copy()
+        new_name_env.update(all_bind_names)
+        rename_local(ast_.body, new_name_env)
+
+    elif isinstance(ast_, ast.Apply):
+        # rename_local(ast_.fn, name_env)
+        # for arg in ast_.arguments:
+        #     rename_local(arg.expr, name_env)
+        raise Exception('Not renamed yet!\n')
+
+    elif isinstance(ast_, ast.Array):
+        for el in ast_.elements:
+            rename_local(el, name_env)
+
+    elif isinstance(ast_, ast.BinaryOp):
+        rename_local(ast_.left_arg, name_env)
+        rename_local(ast_.right_arg, name_env)
+
+    elif isinstance(ast_, ast.BuiltinFunction):
+        raise Exception('Not renamed yet!\n')
+
+    elif isinstance(ast_, ast.Conditional):
+        rename_local(ast_.cond, name_env)
+        rename_local(ast_.branchTrue, name_env)
+        rename_local(ast_.branchFalse, name_env)
+
+    elif isinstance(ast_, ast.Error):
+        return
+
+    elif isinstance(ast_, ast.Function):
+        new_name_env = name_env.copy()
+        for arg in ast_.arguments:
+            new_name_env[arg.id] = arg.id
+        rename_local(ast_.body, new_name_env)
+
+    elif isinstance(ast_, ast.InSuper):
+        raise Exception('Not renamed yet!\n')
+
+    elif isinstance(ast_, ast.Index):
+        return
+
+    elif isinstance(ast_, ast.LiteralBoolean):
+        return
+
+    elif isinstance(ast_, ast.LiteralNumber):
+        return
+
+    elif isinstance(ast_, ast.LiteralString):
+        return
+
+    elif isinstance(ast_, ast.LiteralNull):
+        return
+
+    elif isinstance(ast_, ast.ObjectComprehensionSimple):
+        raise Exception('Not renamed yet!\n')
+
+    elif isinstance(ast_, ast.Self):
+        return
+
+    elif isinstance(ast_, ast.SuperIndex):
+        raise Exception('Not renamed yet!\n')
+
+    elif isinstance(ast_, ast.UnaryOp):
+        rename_local(ast_.arg, name_env)
+
+    elif isinstance(ast_, ast.Var):
+        print('Var:', name_env)
+        ast_.id = name_env[ast_.id]
+
+    else:
+        raise Exception('Node {x} is not found in jsonnet_ast\n'.format(
+            x=ast_.__class__))
+
+
+def rename(name):
+    return name.replace('_', 'U_')
+
+
 def translate_to_lambda_ast(ast_: ast.AST, my_env):
     if isinstance(ast_, ast.Object):
         record = build_record_type_constructor(ast_.fields)
@@ -167,9 +270,13 @@ def create_init_env():
 
 if __name__ == "__main__":
     ast_str = read_ast("core/type_inference/ast_string.txt")
-    print(f"AST: {ast_str}")
+    print(f"AST:\n{ast_str}")
     ast_ = parse_ast(ast_str)
     print(ast_)
+
+    name_env = {'std': 'std'}
+    rename_local(ast_, name_env)
+    print(f"\nRenamed AST:\n{ast_}")
 
     env = create_init_env()
     res = translate_to_lambda_ast(ast_, env)
