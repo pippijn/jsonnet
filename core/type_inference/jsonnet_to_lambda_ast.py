@@ -132,7 +132,7 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         return LiteralString(ast_.value)
 
     elif isinstance(ast_, ast.LiteralNull):
-        return Letrec("null", Identifier("null"), Identifier("null"))
+        return LetrecAnd({"null": Identifier("null")}, Identifier("null"))
 
     elif isinstance(ast_, ast.ObjectComprehensionSimple):
         raise Exception('Not translated yet!\n')
