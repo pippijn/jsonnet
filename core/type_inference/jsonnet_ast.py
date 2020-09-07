@@ -10,10 +10,10 @@ class Object(AST):
         self.fields = fields
 
     def __str__(self):
-        obj_str = '{'
+        obj_str = 'Object({'
         for field in self.fields:
             obj_str += f'{str(field)}: {str(self.fields[field])}, '
-        obj_str += '}'
+        obj_str += '})'
         return obj_str
 
 
@@ -24,9 +24,10 @@ class Local(AST):
         self.binds = binds
 
     def __str__(self):
-        local_str = f'{str(self.body)}, '
+        local_str = 'Local('
         for bind in self.binds:
-            local_str += f'local {str(bind.var)} = {str(bind.body)};'
+            local_str += f'{bind.var}={bind.body}, '
+        local_str += f'in {self.body})'
         return local_str
 
 
@@ -46,6 +47,10 @@ class Conditional(AST):
         self.cond = cond
         self.branchTrue = branchTrue
         self.branchFalse = branchFalse
+    
+    def __str__(self):
+        cond_str = f'if ({self.cond}) then ({self.branchTrue}) else ({self.branchFalse})'
+        return cond_str
 
 
 class BinaryOp(AST):
@@ -54,6 +59,10 @@ class BinaryOp(AST):
         self.op = op
         self.left_arg = left_arg
         self.right_arg = right_arg
+    
+    def __str__(self):
+        bop_str = f'({self.left_arg} {self.op} {self.right_arg})'
+        return bop_str
 
 
 class UnaryOp(AST):
@@ -61,6 +70,10 @@ class UnaryOp(AST):
         super().__init__(location)
         self.op = op
         self.arg = arg
+    
+    def __str__(self):
+        uop_str = f'({self.op}{self.arg})'
+        return uop_str
 
 
 class LiteralBoolean(AST):
@@ -118,11 +131,11 @@ class Apply(AST):
         self.arguments = argv
 
     def __str__(self):
-        arr_str = f'Apply({self.fn}'
+        apply_str = f'Apply({self.fn}'
         for arg in self.arguments:
-            arr_str += f', {str(arg)}'
-        arr_str += ')'
-        return arr_str
+            apply_str += f', {str(arg)}'
+        apply_str += ')'
+        return apply_str
 
 
 class Function(AST):
@@ -130,6 +143,13 @@ class Function(AST):
         super().__init__(location)
         self.body = body
         self.arguments = argv
+    
+    def __str__(self):
+        func_str = f'Function('
+        for arg in self.arguments:
+            func_str += f'{str(arg)}, '
+        func_str += f'=> {str(self.body)})'
+        return func_str
 
 
 class BuiltinFunction(AST):
@@ -143,6 +163,9 @@ class Error(AST):
     def __init__(self, location, msg):
         super().__init__(location)
         self.msg = msg
+    
+    def __str__(self):
+        return f'Error("{self.msg}")'
 
 
 class Index(AST):
@@ -184,11 +207,17 @@ class InSuper(AST):
     def __init__(self, location, elem):
         super().__init__(location)
         self.element = elem
+    
+    def __str__(self):
+        return f'{self.element} in super'
 
 
 class Identifier:
     def __init__(self, name):
         self.name = name
+    
+    def __str__(self):
+        return self.name
 
 
 class ArgParam:
@@ -203,7 +232,7 @@ class ArgParam:
             arg_str += self.id
             delim = '='
         if self.expr:
-            arg_str += f'{delim}{str(self.expr)}'
+            arg_str += f'{delim}{self.expr}'
         return arg_str
 
 
