@@ -34,7 +34,7 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         return build_apply(ast_.fn, ast_.arguments)
 
     elif isinstance(ast_, ast.Array):
-        raise Exception('Not translated yet!\n') 
+        raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.BinaryOp):
         raise Exception('Not translated yet!\n')
@@ -74,7 +74,7 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         return LiteralString(ast_.value)
 
     elif isinstance(ast_, ast.LiteralNull):
-        return LetrecAnd({"null": Identifier("null")}, Identifier("null"))
+        return Identifier("null")
 
     elif isinstance(ast_, ast.ObjectComprehensionSimple):
         raise Exception('Not translated yet!\n')
@@ -148,6 +148,4 @@ def translate_field_name(name):
     if isinstance(name, ast.LiteralString):
         return name.value
     else:
-        raise Exception(
-            f"Expected type LiteralString but got {name.__class__}")
-
+        raise Exception(f"Expected LiteralString but got {name.__class__}")
