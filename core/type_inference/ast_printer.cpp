@@ -580,7 +580,8 @@ const char *examples(int example)
                             field1: a,
                         }
                     },
-                    k: func(4)
+                    k: func(4),
+                    l: func('Google')
                 }
             )"""";   
             break;            
@@ -600,7 +601,7 @@ int main(int argc, char const *argv[])
 
     // print AST
     if (test_mode) {
-        std::cout << "AST nodes:\n";
+        std::cout << "AST nodes:\n;";
         std::cout << ast;
         std::cout << std::endl;
     }
