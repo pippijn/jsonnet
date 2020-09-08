@@ -103,6 +103,7 @@ def build_record_type_constructor(fields):
     type_var = {}
     field_type = {}
     for i, field in enumerate(fields):
+        field = translate_field_name(field)
         var = f'var{i}'
         type_var[var] = TypeVariable()
         field_type[field] = type_var[var]
@@ -162,7 +163,9 @@ def translate_field_name(name):
 
 def build_plus_op(left_arg, right_arg, env):
     if isinstance(right_arg, ast.Object):
-        pass
+        base_obj = translate_to_lambda_ast(left_arg, env)
+        child_obj = translate_to_lambda_ast(right_arg, env)
+        return Inherit(base_obj, child_obj)
     else:
         var = TypeVariable()
         plus_id = get_next_plus_id(env)

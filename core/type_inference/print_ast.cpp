@@ -584,7 +584,44 @@ const char *examples(int example)
                     l: func('Google')
                 }
             )"""";   
-            break;            
+            break;
+        case 19:
+            res = R""""(
+                {
+                    local person = {
+                        name: "No name",
+                    },
+                    student: person { 
+                        local coef = 1,
+                        name: 'Ali', 
+                        b: coef  
+                    },
+                }
+            )"""";   
+            break;
+        case 20:
+            res = R""""(
+                {
+                    a: 1,
+                    b: self.a + 2,
+                    c: self.a + self.b
+                }
+            )"""";   
+            break; 
+        case 21:
+            res = R""""(
+                {
+                    person: {
+                        name: "No name",
+                    },
+                    student: self.person { 
+                        local coef = 1,
+                        name: 'Ali', 
+                        b: coef  
+                    },
+                }
+            )"""";   
+            break;                
         default: break;
     }
     return res;
@@ -592,7 +629,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(18);
+    const char *input = examples(19);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("", input);

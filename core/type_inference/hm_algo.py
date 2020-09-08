@@ -123,6 +123,12 @@ def analyse(node, env, non_generic=None):
             defn_type = analyse(defn, new_env, new_non_generic)
             unify(v_type, defn_type)
         return analyse(node.body, new_env, new_non_generic)
+    elif isinstance(node, Inherit):
+        left_row = analyse(node.base, env, non_generic)
+        right_row = analyse(node.child, env, non_generic)
+        result_type = TypeVariable()
+        unify(result_type, merge_rows(left_row, right_row))
+        return result_type
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
 
@@ -296,10 +302,21 @@ def occurs_in(t, types):
     return any(occurs_in_type(t, t2) for t2 in types)
 
 
+def merge_rows(left_row, right_row):
+    pruned_left_row = prune(left_row)
+    pruned_right_row = prune(right_row)
+    
+    if not (isinstance(pruned_left_row, TypeRowOperator) 
+            and isinstance(pruned_right_row, TypeRowOperator)):
+        raise Exception("Expect TypeRowOperator")
+    
+    unified_fields = pruned_left_row.fields.copy()
+    unified_fields.update(pruned_right_row.fields)
+    return TypeRowOperator(unified_fields)
+
+
 # ==================================================================#
 # Example code to exercise the above
-
-
 def try_exp(env, node):
     """Try to evaluate a type printing the result or reporting errors.
 
@@ -370,9 +387,9 @@ def main():
         # Letrec(x=y and y=x in pair(x,y)) : (var1, var1)
         LetrecAnd(
             {
-                "x": Identifier("y"), 
+                "x": Identifier("y"),
                 "y": Identifier("x")
-            }, 
+            },
             Apply(
                 Apply(
                     Identifier("record"),
@@ -384,12 +401,12 @@ def main():
 
         LetrecAnd(
             {
-                "x": Identifier("z"), 
+                "x": Identifier("z"),
                 "z": Identifier("m"),
                 "m": Identifier("k"),
                 "y": LiteralString("3"),
                 "k": LiteralNumber(5),
-            }, 
+            },
             Apply(
                 Apply(
                     Identifier("record"),

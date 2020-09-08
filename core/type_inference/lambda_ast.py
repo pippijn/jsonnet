@@ -97,3 +97,12 @@ class LiteralBoolean(object):
 
     def __str__(self):
         return str(self.value)
+
+
+class Inherit(object):
+    def __init__(self, base, child):
+        self.base = base
+        self.child = child
+
+    def __str__(self):
+        return "({child} inherits {base})".format(base=self.base, child=self.child)
