@@ -1,4 +1,5 @@
 import hm_algo
+import jsonnet_ast as ast
 from lambda_types import TypeVariable
 from translate_jsonnet_to_lambda import translate_to_lambda_ast
 from rename import rename_local
@@ -17,6 +18,7 @@ def parse_ast(ast_str):
 def create_init_env():
     init_env = {}
     init_env["__record_count__"] = 0
+    init_env["__plus_count__"] = 0
     init_env["None"] = TypeVariable()
     init_env["null"] = TypeVariable()
     init_env["self"] = TypeVariable()

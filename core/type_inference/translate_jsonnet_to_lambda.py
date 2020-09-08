@@ -1,6 +1,6 @@
 import jsonnet_ast as ast
 from lambda_ast import *
-from lambda_types import TypeVariable, TypeRowOperator, Function
+from lambda_types import TypeVariable, TypeRowOperator, Function, TypeOperator
 
 
 def translate_to_lambda_ast(ast_: ast.AST, my_env):
@@ -37,7 +37,10 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.BinaryOp):
-        raise Exception('Not translated yet!\n')
+        if ast_.op == '+':
+            return build_plus_op(ast_.left_arg, ast_.right_arg, my_env)
+        else:
+            raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, ast.BuiltinFunction):
         raise Exception('Not translated yet!\n')
@@ -137,6 +140,12 @@ def get_next_record_id(env):
     return record_id
 
 
+def get_next_plus_id(env):
+    plus_id = "plus_{n}".format(n=env["__plus_count__"])
+    env["__plus_count__"] += 1
+    return plus_id
+
+
 def apply_record(names, record_id, env):
     if not names:
         return Identifier(record_id)
@@ -149,3 +158,15 @@ def translate_field_name(name):
         return name.value
     else:
         raise Exception(f"Expected LiteralString but got {name.__class__}")
+
+
+def build_plus_op(left_arg, right_arg, env):
+    if isinstance(right_arg, ast.Object):
+        pass
+    else:
+        var = TypeVariable()
+        plus_id = get_next_plus_id(env)
+        env[plus_id] = Function(var, Function(var, var))
+        return Apply(Apply(Identifier(plus_id),
+                           translate_to_lambda_ast(left_arg, env)),
+                     translate_to_lambda_ast(right_arg, env))
