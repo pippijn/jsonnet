@@ -55,7 +55,7 @@ def rename_local(ast_: ast.AST, name_env: dict):
         rename_local(ast_.body, new_name_env)
 
     elif isinstance(ast_, ast.InSuper):
-        raise Exception('Not renamed yet!\n')
+        return
 
     elif isinstance(ast_, ast.Index):
         return
@@ -79,7 +79,7 @@ def rename_local(ast_: ast.AST, name_env: dict):
         return
 
     elif isinstance(ast_, ast.SuperIndex):
-        raise Exception('Not renamed yet!\n')
+        return
 
     elif isinstance(ast_, ast.UnaryOp):
         rename_local(ast_.arg, name_env)
