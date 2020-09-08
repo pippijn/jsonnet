@@ -1,6 +1,6 @@
 cc_binary(
-    name = "ast_printer",
-    srcs = ["ast_printer.cpp"],
+    name = "print_ast",
+    srcs = ["print_ast.cpp"],
     deps = [
         "//core:libjsonnet",
     ],
