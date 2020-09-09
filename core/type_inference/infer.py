@@ -8,10 +8,11 @@ from rename import rename_local
 
 
 def get_jsonnet_ast_str(jsonnet):
-    command = f'bazel build //core/type_inference:print_ast && bazel-bin/core/type_inference/print_ast "{jsonnet}"'
-    # maybe delete shell=True in future to make program more safe but it requires special form of command
-    result = subprocess.run(command, stdout=subprocess.PIPE,
-                            check=True, text=True, shell=True)
+    command1 = ['bazel', 'build', '//core/type_inference:print_ast']
+    subprocess.run(command1, check=True, text=True)
+
+    command2 = ['bazel-bin/core/type_inference/print_ast', f'{jsonnet}']
+    result = subprocess.run(command2, stdout=subprocess.PIPE, check=True, text=True)
     return result.stdout
 
 
