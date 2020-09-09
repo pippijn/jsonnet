@@ -86,7 +86,7 @@ def translate_to_lambda_ast(ast_: ast.AST, my_env):
         return Identifier("self")
 
     elif isinstance(ast_, ast.SuperIndex):
-        raise Exception('Not translated yet!\n')
+        return Identifier(ast_.index.value)
 
     elif isinstance(ast_, ast.UnaryOp):
         raise Exception('Not translated yet!\n')

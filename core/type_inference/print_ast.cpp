@@ -266,11 +266,9 @@ std::ostream &operator<<(std::ostream &out, const Self *ast)
 
 std::ostream &operator<<(std::ostream &out, const SuperIndex *ast)
 {
-    out << "ast.Index(";
+    out << "ast.SuperIndex(";
     out << &ast->location;
     out << ",";
-    out << "ast.Super()";
-    out << ", ";
     out << ast->index;
     out << ")";
     return out;
@@ -589,7 +587,7 @@ const char *examples(int example)
             res = R""""(
                 {
                     local person = {
-                        name: "No name",
+                        name: 'lala',
                     },
                     student: person { 
                         local coef = 1,
@@ -621,6 +619,36 @@ const char *examples(int example)
                     },
                 }
             )"""";   
+            break;
+        case 22:
+            res = R""""(
+                {
+                    local person = {
+                        name: 0,
+                    },
+                    student: person { 
+                        name: 'Ali', 
+                        age: 19  
+                    },
+                }
+            )"""";   
+            break;
+        case 23:
+            res = R""""(
+                {
+                    local person = {
+                        name: 'no name',
+                    },
+                    student: person { 
+                        name: 'Ali', 
+                        age: 19,
+                        best_friend: person {
+                            age: 18,
+                            has_friend: true
+                        }  
+                    },
+                }
+            )"""";   
             break;                
         default: break;
     }
@@ -629,14 +657,13 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(19);
+    const char *input = examples(7);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("", input);
     AST *ast = jsonnet_parse(alloc, tokens);
     jsonnet_desugar(alloc, ast, nullptr);
 
-    // print AST
     if (test_mode) {
         std::cout << "AST nodes:\n;";
         std::cout << ast;

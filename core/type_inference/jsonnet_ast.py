@@ -186,14 +186,6 @@ class Self(AST):
         return 'self'
 
 
-class Super(AST):
-    def __init__(self, location):
-        super().__init__(location)
-
-    def __str__(self):
-        return 'super'
-
-
 class SuperIndex(AST):
     def __init__(self, location, index):
         super().__init__(location)
