@@ -1,3 +1,5 @@
+import subprocess
+
 import hm_algo
 import jsonnet_ast as ast
 from lambda_types import TypeVariable
@@ -5,10 +7,12 @@ from translate_jsonnet_to_lambda import translate_to_lambda_ast
 from rename import rename_local
 
 
-def read_ast(filename):
-    f = open(filename, 'r')
-    ast = f.read()
-    return ast
+def get_jsonnet_ast_str(jsonnet):
+    command = f'bazel build //core/type_inference:print_ast && bazel-bin/core/type_inference/print_ast "{jsonnet}"'
+    # maybe delete shell=True in future to make program more safe but it requires special form of command
+    result = subprocess.run(command, stdout=subprocess.PIPE,
+                            check=True, text=True, shell=True)
+    return result.stdout
 
 
 def parse_ast(ast_str):
@@ -26,18 +30,19 @@ def create_init_env():
 
 
 if __name__ == "__main__":
-    ast_str = read_ast("core/type_inference/ast_string.txt")
-    print(f"AST:\n{ast_str}")
-    
-    ast_ = parse_ast(ast_str)
-    print(ast_)
+    jsonnet_program = "{a: 1}"
+    jsonnet_ast_str = get_jsonnet_ast_str(jsonnet_program)
+    print(f"AST:\n{jsonnet_ast_str}")
+
+    jsonnet_ast = parse_ast(jsonnet_ast_str)
+    print(jsonnet_ast)
 
     name_env = {'std': 'std'}
-    rename_local(ast_, name_env)
-    print(f"Renamed AST:\n{ast_}")
+    rename_local(jsonnet_ast, name_env)
+    print(f"Renamed AST:\n{jsonnet_ast}")
 
     env = create_init_env()
-    lambda_ast = translate_to_lambda_ast(ast_, env)
+    lambda_ast = translate_to_lambda_ast(jsonnet_ast, env)
     print(f"Lambda AST:\n{lambda_ast}")
-    
+
     hm_algo.try_exp(env, lambda_ast)
