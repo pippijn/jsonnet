@@ -126,8 +126,10 @@ def analyse(node, env, non_generic=None):
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
         right_row = analyse(node.child, env, non_generic)
+        unify(left_row, right_row)
         result_type = TypeVariable()
-        unify(result_type, merge_rows(left_row, right_row))
+        unify(left_row, result_type)
+        unify(right_row, result_type)
         return result_type
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
@@ -211,18 +213,14 @@ def unify(t1, t2):
         for p, q in zip(a.types, b.types):
             unify(p, q)
     elif isinstance(a, TypeRowOperator) and isinstance(b, TypeRowOperator):
-        unify_rows(a, b)
+        for k in a.fields:
+            if k in b.fields:
+                unify(a.fields[k], b.fields[k])
+        unified_fields = a.fields.copy()
+        unified_fields.update(b.fields)
+        b.fields = unified_fields
     else:
         assert 0, "Not unified"
-
-
-def unify_rows(r1, r2):
-    if len(r1.fields) != len(r2.fields) or set(r1.fields.keys()) != set(r2.fields.keys()):
-        raise InferenceError(
-            "Type mismatch: {0} != {1}".format(str(r1), str(r2)))
-    # in case we don't allow polymorhic fields
-    for k in r1.fields:
-        unify(r1.fields[k], r2.fields[k])
 
 
 def prune(t):
@@ -300,19 +298,6 @@ def occurs_in(t, types):
         True if t occurs in any of types, otherwise False
     """
     return any(occurs_in_type(t, t2) for t2 in types)
-
-
-def merge_rows(left_row, right_row):
-    pruned_left_row = prune(left_row)
-    pruned_right_row = prune(right_row)
-    
-    if not (isinstance(pruned_left_row, TypeRowOperator) 
-            and isinstance(pruned_right_row, TypeRowOperator)):
-        raise Exception("Expect TypeRowOperator")
-    
-    unified_fields = pruned_left_row.fields.copy()
-    unified_fields.update(pruned_right_row.fields)
-    return TypeRowOperator(unified_fields)
 
 
 # ==================================================================#
