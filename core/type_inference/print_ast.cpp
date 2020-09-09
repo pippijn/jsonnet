@@ -657,7 +657,7 @@ const char *examples(int example)
 
 int main(int argc, char const *argv[])
 {
-    const char *input = examples(7);
+    const char *input = examples(23);
     Allocator *alloc = new Allocator();
 
     Tokens tokens = jsonnet_lex("", input);
