@@ -5,6 +5,8 @@ from lambda_types import TypeVariable, TypeRowOperator, Function, TypeOperator
 
 def translate_to_lambda_ast(ast_: ast.AST, my_env):
     if isinstance(ast_, ast.Object):
+        ast_.fields = {translate_field_name(
+            name): val for name, val in ast_.fields.items()}
         record = build_record_type_constructor(ast_.fields)
         record_id = get_next_record_id(my_env)
         my_env[record_id] = record
@@ -103,7 +105,6 @@ def build_record_type_constructor(fields):
     type_var = {}
     field_type = {}
     for i, field in enumerate(fields):
-        field = translate_field_name(field)
         var = f'var{i}'
         type_var[var] = TypeVariable()
         field_type[field] = type_var[var]
@@ -121,9 +122,8 @@ def build_record_type_constructor(fields):
 def build_letrec_and(names, fields, body, env):
     translated_fields = {}
     for name in names:
-        translated_id = translate_field_name(name)
         translated_body = translate_to_lambda_ast(fields[name], env)
-        translated_fields[translated_id] = translated_body
+        translated_fields[name] = translated_body
     return LetrecAnd(translated_fields, body)
 
 
@@ -131,8 +131,7 @@ def build_let(names, fields, body, env):
     if not names:
         return body
     translated_body = translate_to_lambda_ast(fields[names[0]], env)
-    translated_id = translate_field_name(names[0])
-    return Let(translated_id, translated_body, build_let(names[1:], fields, body, env))
+    return Let(names[0], translated_body, build_let(names[1:], fields, body, env))
 
 
 def get_next_record_id(env):
@@ -150,8 +149,7 @@ def get_next_plus_id(env):
 def apply_record(names, record_id, env):
     if not names:
         return Identifier(record_id)
-    name = translate_field_name(names[-1])
-    return Apply(apply_record(names[:-1], record_id, env), Identifier(name))
+    return Apply(apply_record(names[:-1], record_id, env), Identifier(names[-1]))
 
 
 def translate_field_name(name):
