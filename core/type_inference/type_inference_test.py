@@ -47,6 +47,28 @@ class TestTypeInference(unittest.TestCase):
         error_msg = "Type mismatch: number != string"
         self.assertEqual(infer.run(example), error_msg)
 
+    def test_mutual_rec(self):
+        example = """(
+            {
+                euro: self.dol,
+                dol: self.euro,
+            }
+        )"""
+        infered_type = "{euro: a, dol: a}"
+        self.assertEqual(infer.run(example), infered_type)
+
+    def test_local_field_rec(self):
+        example = """(
+            {
+                local k = a, 
+                local a = self.b, 
+                b: 2,
+                c: k 
+            }
+        )"""
+        infered_type = "{b: number, c: number}"
+        self.assertEqual(infer.run(example), infered_type)
+
 
 if __name__ == '__main__':
     unittest.main()
