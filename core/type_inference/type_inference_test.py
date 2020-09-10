@@ -6,13 +6,13 @@ import hm_algo
 class TestTypeInference(unittest.TestCase):
 
     def test_number(self):
-        self.assertEqual(infer.run("{a: 1}"), "{a: number}")
+        self.assertEqual(infer.run("{x: 1}"), "{x: number}")
 
     def test_boolean(self):
-        self.assertEqual(infer.run("{a: true}"), "{a: boolean}")
+        self.assertEqual(infer.run("{x: true}"), "{x: boolean}")
 
     def test_string(self):
-        self.assertEqual(infer.run("{a: 'a'}"), "{a: string}")
+        self.assertEqual(infer.run("{x: 'a'}"), "{x: string}")
 
     def test_inheritance(self):
         example = """(
@@ -30,8 +30,8 @@ class TestTypeInference(unittest.TestCase):
                 },
             }
         )"""
-        infered_type = "{student: {name: string, age: number, best_friend: {name: string, age: number, has_friend: boolean}}}"
-        self.assertEqual(infer.run(example), infered_type)
+        inferred_type = "{student: {name: string, age: number, best_friend: {age: number, has_friend: boolean, name: string}}}"
+        self.assertEqual(infer.run(example), inferred_type)
 
     def test_type_mismatch_error(self):
         example = """(
@@ -44,7 +44,7 @@ class TestTypeInference(unittest.TestCase):
                 },
             }
         )"""
-        error_msg = "Type mismatch: number != string"
+        error_msg = "Type mismatch: string != number"
         self.assertEqual(infer.run(example), error_msg)
 
     def test_mutual_rec(self):
@@ -54,20 +54,42 @@ class TestTypeInference(unittest.TestCase):
                 dol: self.euro,
             }
         )"""
-        infered_type = "{euro: a, dol: a}"
-        self.assertEqual(infer.run(example), infered_type)
+        inferred_type = "{euro: a, dol: a}"
+        self.assertEqual(infer.run(example), inferred_type)
 
     def test_local_field_rec(self):
         example = """(
             {
-                local k = a, 
-                local a = self.b, 
-                b: 2,
-                c: k 
+                local x = y, 
+                local y = self.z, 
+                z: 2,
+                t: x 
             }
         )"""
-        infered_type = "{b: number, c: number}"
-        self.assertEqual(infer.run(example), infered_type)
+        inferred_type = "{z: number, t: number}"
+        self.assertEqual(infer.run(example), inferred_type)
+    
+    def test_binary_plus(self):
+        example = """(
+            {
+                x: 1,
+                y: 2,
+                z: self.x + self.y
+            }
+        )"""
+        inferred_type = "{x: number, y: number, z: number}"
+        self.assertEqual(infer.run(example), inferred_type)
+    
+    def test_binary_plus_type_error(self):
+        example = """(
+            {
+                x: 1,
+                y: true,
+                z: self.x + self.y
+            }
+        )"""
+        error_msg = "Type mismatch: boolean != number"
+        self.assertEqual(infer.run(example), error_msg)
 
 
 if __name__ == '__main__':
