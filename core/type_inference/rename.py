@@ -85,6 +85,8 @@ def rename_local(ast_: ast.AST, name_env: dict):
         rename_local(ast_.arg, name_env)
 
     elif isinstance(ast_, ast.Var):
+        if ast_.id not in name_env:
+            raise Exception(f"Local {ast_.id} is not defined")
         ast_.id = name_env[ast_.id]
 
     else:
