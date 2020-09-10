@@ -316,8 +316,10 @@ def try_exp(env, node):
     try:
         t = analyse(node, env)
         print(str(t))
+        return str(t)
     except (ParseError, InferenceError) as e:
         print(e)
+        return str(e)
 
 
 def main():

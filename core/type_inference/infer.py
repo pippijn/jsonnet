@@ -12,7 +12,8 @@ def get_jsonnet_ast_str(jsonnet):
     subprocess.run(command1, check=True, text=True)
 
     command2 = ['bazel-bin/core/type_inference/print_ast', f'{jsonnet}']
-    result = subprocess.run(command2, stdout=subprocess.PIPE, check=True, text=True)
+    result = subprocess.run(
+        command2, stdout=subprocess.PIPE, check=True, text=True)
     return result.stdout
 
 
@@ -30,8 +31,7 @@ def create_init_env():
     return init_env
 
 
-if __name__ == "__main__":
-    jsonnet_program = "{a: 1}"
+def run(jsonnet_program):
     jsonnet_ast_str = get_jsonnet_ast_str(jsonnet_program)
     print(f"AST:\n{jsonnet_ast_str}")
 
@@ -46,4 +46,9 @@ if __name__ == "__main__":
     lambda_ast = translate_to_lambda_ast(jsonnet_ast, env)
     print(f"Lambda AST:\n{lambda_ast}")
 
-    hm_algo.try_exp(env, lambda_ast)
+    return hm_algo.try_exp(env, lambda_ast)
+
+
+if __name__ == "__main__":
+    jsonnet_program = "{a: 1}"
+    run(jsonnet_program)
