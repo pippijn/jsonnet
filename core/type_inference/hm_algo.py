@@ -126,7 +126,6 @@ def analyse(node, env, non_generic=None):
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
         right_row = analyse(node.child, env, non_generic)
-        unify(left_row, right_row)
         result_type = TypeVariable()
         unify(left_row, result_type)
         unify(right_row, result_type)
