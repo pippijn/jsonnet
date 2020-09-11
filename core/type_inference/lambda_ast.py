@@ -62,10 +62,10 @@ class LetrecAnd(object):
         self.body = body
 
     def __str__(self):
-        str_view = 'letrec_and {'
+        str_view = '(letrec_and {'
         for v, defn in self.bindings.items():
             str_view += f'{v}: {defn}, '
-        str_view += ('} in ' + str(self.body))
+        str_view += ('} in ' + str(self.body) + ')')
         return str_view
 
 
