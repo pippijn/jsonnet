@@ -126,7 +126,9 @@ def analyse(node, env, non_generic=None):
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
         right_row = analyse(node.child, env, non_generic)
-        result_type = TypeVariable()
+        # could be a bug since result_type instance is pointer on left row
+        # and then we modify result_type --> we modify left_row obj
+        result_type = TypeVariable()  
         unify(left_row, result_type)
         unify(right_row, result_type)
         return result_type
