@@ -90,6 +90,21 @@ class TestTypeInference(unittest.TestCase):
         )"""
         error_msg = "Type mismatch: boolean != number"
         self.assertEqual(infer.run(example), error_msg)
+    
+    def test_unify_with_changing(self):
+        example = """(
+            {
+                local a = self.b {
+                    e: true
+                },
+                b: {
+                    d: 1,
+                },
+                c: a
+            }
+        )"""
+        error_msg = "{b: {d: number}, c: {d: number, e: boolean}}"
+        self.assertEqual(infer.run(example), error_msg)
 
 
 if __name__ == '__main__':
