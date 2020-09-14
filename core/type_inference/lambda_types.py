@@ -43,8 +43,7 @@ class TypeVariable(object):
         new_instance = TypeVariable()
         new_instance.__dict__.update(self.__dict__)
         new_instance.id = self.id
-        new_instance.instance = copy.copy(self.instance)
-        # new_instance.instance = copy.deepcopy(self.instance)
+        new_instance.instance = copy.deepcopy(self.instance)
         new_instance.__name = self.__name
         return new_instance
 
