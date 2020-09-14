@@ -111,6 +111,8 @@ def build_record_type_constructor(fields):
     record_type = TypeRowOperator(field_type)
 
     def rec_build(i, n, type_var, record_type):
+        if n == 0:
+            return record_type
         var = type_var[f'var{i}']
         if (i == n-1):
             return Function(var, record_type)

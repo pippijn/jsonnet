@@ -103,8 +103,15 @@ class TestTypeInference(unittest.TestCase):
                 c: a
             }
         )"""
-        error_msg = "{b: {d: number}, c: {e: boolean, d: number}}"
-        self.assertEqual(infer.run(example), error_msg)
+        inferred_type = "{b: {d: number}, c: {e: boolean, d: number}}"
+        self.assertEqual(infer.run(example), inferred_type)
+    
+    def test_empty_object(self):
+        example = """(
+            {}
+        )"""
+        inferred_type = "{}"
+        self.assertEqual(infer.run(example), inferred_type)
 
 
 if __name__ == '__main__':
