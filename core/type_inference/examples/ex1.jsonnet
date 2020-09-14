@@ -7,7 +7,7 @@
             z: null    
         } 
     }, 
-    x: base {}, 
+    x: base {k: 1}, 
     y: base { s: "str" } 
 }
 
