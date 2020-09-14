@@ -103,7 +103,7 @@ class TestTypeInference(unittest.TestCase):
                 c: a
             }
         )"""
-        error_msg = "{b: {d: number}, c: {d: number, e: boolean}}"
+        error_msg = "{b: {d: number}, c: {e: boolean, d: number}}"
         self.assertEqual(infer.run(example), error_msg)
 
 

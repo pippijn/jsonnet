@@ -7,11 +7,10 @@
               by Cardelli.
 .. moduleauthor:: Robert Smallshire
 """
-
 from __future__ import print_function
 from lambda_ast import *
 from lambda_types import *
-
+import copy
 
 # =======================================================#
 # Exception types
@@ -128,8 +127,9 @@ def analyse(node, env, non_generic=None):
         right_row = analyse(node.child, env, non_generic)
         # could be a bug since result_type instance is pointer on left row
         # and then we modify result_type --> we modify left_row obj
-        result_type = TypeVariable()  
-        unify(left_row, result_type)
+        result_type = TypeVariable()
+        left_row_copy = left_row.type_deepcopy()
+        unify(left_row_copy, result_type)
         unify(right_row, result_type)
         return result_type
     assert 0, "Unhandled syntax node {0}".format(type(node))

@@ -1,5 +1,6 @@
 # =======================================================#
 # Types and type constructors
+import copy
 
 class TypeVariable(object):
     """A type variable standing for an arbitrary type.
@@ -37,6 +38,15 @@ class TypeVariable(object):
 
     def __repr__(self):
         return "TypeVariable(id = {0})".format(self.id)
+    
+    def type_deepcopy(self):
+        new_instance = TypeVariable()
+        new_instance.__dict__.update(self.__dict__)
+        new_instance.id = self.id
+        new_instance.instance = copy.copy(self.instance)
+        # new_instance.instance = copy.deepcopy(self.instance)
+        new_instance.__name = self.__name
+        return new_instance
 
 
 class TypeRowOperator(object):
@@ -54,6 +64,12 @@ class TypeRowOperator(object):
         name_type_pairs = [f"{x[0]}: {x[1]}" for x in self.fields.items()]
 
         return "{{{0}}}".format(', '.join(name_type_pairs))
+    
+    def type_deepcopy(self):
+        new_instance = TypeRowOperator(self.fields)
+        new_instance.__dict__.update(self.__dict__)
+        new_instance.fields = copy.deepcopy(self.fields)
+        return new_instance
 
 
 class TypeOperator(object):
@@ -71,6 +87,12 @@ class TypeOperator(object):
             return "({0} {1} {2})".format(str(self.types[0]), self.name, str(self.types[1]))
         else:
             return "{0} {1}" .format(self.name, ' '.join(self.types))
+    
+    def type_deepcopy(self):
+        new_instance = TypeOperator(self.name, self.types)
+        new_instance.__dict__.update(self.__dict__)
+        new_instance.types = copy.deepcopy(self.types)
+        return new_instance
 
 
 class Function(TypeOperator):
