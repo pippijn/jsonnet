@@ -13,6 +13,13 @@ class TestTypeInference(unittest.TestCase):
 
     def test_string(self):
         self.assertEqual(infer.run("{x: 'a'}"), "{x: string}")
+    
+    def test_empty_object(self):
+        example = """(
+            {}
+        )"""
+        inferred_type = "{}"
+        self.assertEqual(infer.run(example), inferred_type)
 
     def test_inheritance(self):
         example = """(
@@ -120,16 +127,46 @@ class TestTypeInference(unittest.TestCase):
                 res: f({ a: null }) 
             }
         )"""
-        inferred_type = "Type mismatch: string != number"
+        error_msg = "Type mismatch: string != number"
+        self.assertEqual(infer.run(example), error_msg)
+
+    def test_inheritance2(self):
+        example = """(
+            { 
+                local base = { 
+                    local b = self.a {
+                        z: 3,
+                    },
+                    a: {
+                        z: null    
+                    },
+                }, 
+                x: base {k: 1}, 
+                y: base {s: "str" } 
+            }
+        )"""
+        inferred_type = "{x: {k: number, a: {z: number}}, y: {s: string, a: {z: number}}}"
         self.assertEqual(infer.run(example), inferred_type)
     
-    def test_empty_object(self):
-        example = """(
-            {}
-        )"""
-        inferred_type = "{}"
-        self.assertEqual(infer.run(example), inferred_type)
+
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(TestTypeInference('test_number'))
+    suite.addTest(TestTypeInference('test_boolean'))
+    suite.addTest(TestTypeInference('test_string'))
+    suite.addTest(TestTypeInference('test_empty_object'))
+    suite.addTest(TestTypeInference('test_inheritance'))
+    suite.addTest(TestTypeInference('test_mutual_rec'))
+    suite.addTest(TestTypeInference('test_type_mismatch_error'))
+    suite.addTest(TestTypeInference('test_local_field_rec'))
+    suite.addTest(TestTypeInference('test_binary_plus'))
+    suite.addTest(TestTypeInference('test_binary_plus_type_error'))
+    suite.addTest(TestTypeInference('test_using_local_obj_with_inheritance'))
+    suite.addTest(TestTypeInference('test_inherit_param_inside_func'))
+    suite.addTest(TestTypeInference('test_inheritance2'))
+    return suite
 
 
 if __name__ == '__main__':
-    unittest.main()
+    runner = unittest.TextTestRunner()
+    runner.run(suite())
