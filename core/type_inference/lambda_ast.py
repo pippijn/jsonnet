@@ -1,7 +1,7 @@
 class Lambda(object):
     """Lambda abstraction"""
 
-    def __init__(self, v, body):
+    def __init__(self, v, body, location=None):
         self.v = v
         self.body = body
 
@@ -12,7 +12,7 @@ class Lambda(object):
 class Identifier(object):
     """Identifier"""
 
-    def __init__(self, name):
+    def __init__(self, name, location=None):
         self.name = name
 
     def __str__(self):
@@ -22,7 +22,7 @@ class Identifier(object):
 class Apply(object):
     """Function application"""
 
-    def __init__(self, fn, arg):
+    def __init__(self, fn, arg, location=None):
         self.fn = fn
         self.arg = arg
 
@@ -33,7 +33,7 @@ class Apply(object):
 class Let(object):
     """Let binding"""
 
-    def __init__(self, v, defn, body):
+    def __init__(self, v, defn, body, location=None):
         self.v = v
         self.defn = defn
         self.body = body
@@ -45,7 +45,7 @@ class Let(object):
 class Letrec(object):
     """Letrec binding"""
 
-    def __init__(self, v, defn, body):
+    def __init__(self, v, defn, body, location=None):
         self.v = v
         self.defn = defn
         self.body = body
@@ -57,7 +57,7 @@ class Letrec(object):
 class LetrecAnd(object):
     """Letrec binding"""
 
-    def __init__(self, bindings, body):
+    def __init__(self, bindings, body, location=None):
         self.bindings = bindings
         self.body = body
 
@@ -72,7 +72,7 @@ class LetrecAnd(object):
 class LiteralNumber(object):
     """LiteralNumber"""
 
-    def __init__(self, value):
+    def __init__(self, value, location=None):
         self.value = value
 
     def __str__(self):
@@ -82,7 +82,7 @@ class LiteralNumber(object):
 class LiteralString(object):
     """LiteralString"""
 
-    def __init__(self, value):
+    def __init__(self, value, location=None):
         self.value = value
 
     def __str__(self):
@@ -92,7 +92,7 @@ class LiteralString(object):
 class LiteralBoolean(object):
     """LiteralBoolean"""
 
-    def __init__(self, value):
+    def __init__(self, value, location=None):
         self.value = value
 
     def __str__(self):
@@ -100,7 +100,7 @@ class LiteralBoolean(object):
 
 
 class Inherit(object):
-    def __init__(self, base, child):
+    def __init__(self, base, child, location=None):
         self.base = base
         self.child = child
 
