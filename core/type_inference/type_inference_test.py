@@ -91,7 +91,7 @@ class TestTypeInference(unittest.TestCase):
         error_msg = "Type mismatch: boolean != number"
         self.assertEqual(infer.run(example), error_msg)
     
-    def test_unify_with_changing(self):
+    def test_using_local_obj_with_inheritance(self):
         example = """(
             {
                 local a = self.b {
@@ -104,6 +104,23 @@ class TestTypeInference(unittest.TestCase):
             }
         )"""
         inferred_type = "{b: {d: number}, c: {e: boolean, d: number}}"
+        self.assertEqual(infer.run(example), inferred_type)
+    
+    def test_inherit_param_inside_func(self):
+        example = """(
+            { 
+                local f(base) = { 
+                    x: base { 
+                        a: 3 
+                    }, 
+                    y: base { 
+                        a: "str" 
+                    } 
+                }, 
+                res: f({ a: null }) 
+            }
+        )"""
+        inferred_type = "Type mismatch: string != number"
         self.assertEqual(infer.run(example), inferred_type)
     
     def test_empty_object(self):
