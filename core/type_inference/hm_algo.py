@@ -125,10 +125,10 @@ def analyse(node, env, non_generic=None):
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
         right_row = analyse(node.child, env, non_generic)
-        # could be a bug since result_type instance is pointer on left row
-        # and then we modify result_type --> we modify left_row obj
+        # since we work with the copy of base class, we over-approximate it,
+        # and its field names can be used with different types within different objects
         result_type = TypeVariable()
-        left_row_copy = left_row.type_deepcopy()
+        left_row_copy = type_copy(left_row)
         unify(left_row_copy, result_type)
         unify(right_row, result_type)
         return result_type
@@ -180,6 +180,19 @@ def fresh(t, non_generic):
             return TypeRowOperator({k: freshrec(v) for k, v in p.fields.items()})
 
     return freshrec(t)
+
+def type_copy(t):
+    if isinstance(t, TypeVariable):
+        new_instance = TypeVariable()
+        new_instance.id = t.id
+        if t.instance:
+            new_instance.instance = type_copy(t.instance)
+            new_instance.__name = t.name
+    elif isinstance(t, TypeOperator):
+        new_instance = TypeOperator(t.name, [type_copy(x) for x in t.types])
+    elif isinstance(t, TypeRowOperator):
+        new_instance = TypeRowOperator({k: type_copy(v) for k, v in t.fields.items()})
+    return new_instance
 
 
 def unify(t1, t2):
