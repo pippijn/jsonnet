@@ -129,6 +129,23 @@ class TestTypeInference(unittest.TestCase):
         )"""
         error_msg = "Type mismatch: string != number"
         self.assertEqual(infer.run(example), error_msg)
+    
+    def test_inherit_base_twice(self):
+        example = """(
+            { 
+                local base = { 
+                    a: null 
+                }, 
+                x: base { 
+                    a: 3 
+                }, 
+                y: base { 
+                    a: "str" 
+                } 
+            }
+        )"""
+        error_msg = "Type mismatch: string != number"
+        self.assertEqual(infer.run(example), error_msg)
 
     def test_inheritance2(self):
         example = """(
@@ -163,6 +180,7 @@ def suite():
     suite.addTest(TestTypeInference('test_binary_plus_type_error'))
     suite.addTest(TestTypeInference('test_using_local_obj_with_inheritance'))
     suite.addTest(TestTypeInference('test_inherit_param_inside_func'))
+    suite.addTest(TestTypeInference('test_inherit_base_twice'))
     suite.addTest(TestTypeInference('test_inheritance2'))
     return suite
 
