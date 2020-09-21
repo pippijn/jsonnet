@@ -108,7 +108,7 @@ def analyse(node, env, non_generic=None):
         new_non_generic = non_generic.copy()
         new_non_generic.add(new_type)
         defn_type = analyse(node.defn, new_env, new_non_generic)
-        unify(new_type, defn_type)
+        unify(new_type, defn_type, node.location)
         return analyse(node.body, new_env, non_generic)
     elif isinstance(node, LetrecAnd):
         new_env = env.copy()
@@ -120,7 +120,7 @@ def analyse(node, env, non_generic=None):
         for v, (defn, loc) in node.bindings.items():
             v_type = new_env[v]
             defn_type = analyse(defn, new_env, new_non_generic)
-            unify(v_type, defn_type, loc)
+            unify(v_type, defn_type, loc, v)
         return analyse(node.body, new_env, new_non_generic)
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
@@ -195,7 +195,7 @@ def type_copy(t):
     return new_instance
 
 
-def unify(t1, t2, loc=None):
+def unify(t1, t2, loc=None, field_name=None):
     """Unify the two types t1 and t2.
 
     Makes the types t1 and t2 the same.
@@ -221,14 +221,17 @@ def unify(t1, t2, loc=None):
         unify(b, a, loc)
     elif isinstance(a, TypeOperator) and isinstance(b, TypeOperator):
         if a.name != b.name or len(a.types) != len(b.types):
-            err_msg = "Type mismatch: {0} != {1} at {2}".format(str(a), str(b), loc)
+            err_msg = "Type mismatch"
+            if field_name:
+                err_msg += f" in the field '{field_name}'"
+            err_msg += ": {0} != {1} at {2}".format(str(a), str(b), loc)
             raise InferenceError(err_msg)
         for p, q in zip(a.types, b.types):
             unify(p, q, loc)
     elif isinstance(a, TypeRowOperator) and isinstance(b, TypeRowOperator):
         for k in a.fields:
             if k in b.fields:
-                unify(a.fields[k], b.fields[k], loc)
+                unify(a.fields[k], b.fields[k], loc, k)
         unified_fields = a.fields.copy()
         unified_fields.update(b.fields)
         b.fields = unified_fields
