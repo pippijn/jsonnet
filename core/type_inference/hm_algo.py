@@ -117,10 +117,10 @@ def analyse(node, env, non_generic=None):
             new_type = TypeVariable()
             new_env[v] = new_type
             new_non_generic.add(new_type)
-        for v, defn in node.bindings.items():
+        for v, (defn, loc) in node.bindings.items():
             v_type = new_env[v]
             defn_type = analyse(defn, new_env, new_non_generic)
-            unify(v_type, defn_type)
+            unify(v_type, defn_type, loc)
         return analyse(node.body, new_env, new_non_generic)
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
@@ -195,7 +195,7 @@ def type_copy(t):
     return new_instance
 
 
-def unify(t1, t2):
+def unify(t1, t2, loc=None):
     """Unify the two types t1 and t2.
 
     Makes the types t1 and t2 the same.
@@ -223,7 +223,7 @@ def unify(t1, t2):
     elif isinstance(a, TypeOperator) and isinstance(b, TypeOperator):
         if a.name != b.name or len(a.types) != len(b.types):
             raise InferenceError(
-                "Type mismatch: {0} != {1}".format(str(a), str(b)))
+                "Type mismatch: {0} != {1} at {2}".format(str(a), str(b), loc))
         for p, q in zip(a.types, b.types):
             unify(p, q)
     elif isinstance(a, TypeRowOperator) and isinstance(b, TypeRowOperator):

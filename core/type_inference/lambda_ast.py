@@ -4,6 +4,7 @@ class Lambda(object):
     def __init__(self, v, body, location=None):
         self.v = v
         self.body = body
+        self.location = location
 
     def __str__(self):
         return "(fn {v} => {body})".format(v=self.v, body=self.body)
@@ -14,9 +15,10 @@ class Identifier(object):
 
     def __init__(self, name, location=None):
         self.name = name
+        self.location = location
 
     def __str__(self):
-        return self.name
+        return "Identifier({name})".format(name=self.name)
 
 
 class Apply(object):
@@ -25,6 +27,7 @@ class Apply(object):
     def __init__(self, fn, arg, location=None):
         self.fn = fn
         self.arg = arg
+        self.location = location
 
     def __str__(self):
         return "({fn} {arg})".format(fn=self.fn, arg=self.arg)
@@ -37,6 +40,7 @@ class Let(object):
         self.v = v
         self.defn = defn
         self.body = body
+        self.location = location
 
     def __str__(self):
         return "(let {v} = {defn} in {body})".format(v=self.v, defn=self.defn, body=self.body)
@@ -49,6 +53,7 @@ class Letrec(object):
         self.v = v
         self.defn = defn
         self.body = body
+        self.location = location
 
     def __str__(self):
         return "(letrec {v} = {defn} in {body})".format(v=self.v, defn=self.defn, body=self.body)
@@ -60,12 +65,13 @@ class LetrecAnd(object):
     def __init__(self, bindings, body, location=None):
         self.bindings = bindings
         self.body = body
+        self.location = location
 
     def __str__(self):
-        str_view = '(letrec_and {'
-        for v, defn in self.bindings.items():
-            str_view += f'{v}: {defn}, '
-        str_view += ('} in ' + str(self.body) + ')')
+        str_view = "(letrec_and {"
+        for v, (defn, loc) in self.bindings.items():
+            str_view += f"{v}: ({defn}, {loc}), "
+        str_view += f"}} in {self.body})"
         return str_view
 
 
@@ -74,6 +80,7 @@ class LiteralNumber(object):
 
     def __init__(self, value, location=None):
         self.value = value
+        self.location = location
 
     def __str__(self):
         return str(self.value)
@@ -84,9 +91,10 @@ class LiteralString(object):
 
     def __init__(self, value, location=None):
         self.value = value
+        self.location = location
 
     def __str__(self):
-        return self.value
+        return "LiteralString({v})".format(v=self.value)
 
 
 class LiteralBoolean(object):
@@ -94,6 +102,7 @@ class LiteralBoolean(object):
 
     def __init__(self, value, location=None):
         self.value = value
+        self.location = location
 
     def __str__(self):
         return str(self.value)
@@ -103,6 +112,7 @@ class Inherit(object):
     def __init__(self, base, child, location=None):
         self.base = base
         self.child = child
+        self.location = location
 
     def __str__(self):
         return "({child} inherits {base})".format(base=self.base, child=self.child)
