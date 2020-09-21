@@ -13,8 +13,8 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
         my_env[record_id] = record
 
         field_keys = list(ast_.fields.keys())
-        body = apply_record(field_keys, record_id, my_env)
-        return build_letrec_and(field_keys, ast_.fields, body, my_env)
+        body = apply_record(field_keys, record_id, my_env, ast_.location)
+        return build_letrec_and(field_keys, ast_.fields, body, my_env, ast_.location)
 
     elif isinstance(ast_, j_ast.Local):
         bind_dic = {}
@@ -26,22 +26,24 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
             body.bindings.update(bind_dic)
             return body
         else:
-            return lam_ast.LetrecAnd(bind_dic, body)
+            return lam_ast.LetrecAnd(bind_dic, body, ast_.location)
 
     elif isinstance(ast_, j_ast.Apply):
-        def build_apply(fn, args):
+        def build_apply(fn, args, location):
             if not args:
                 return translate_to_lambda_ast(fn, my_env)
             translated_arg = translate_to_lambda_ast(args[-1].expr, my_env)
-            return lam_ast.Apply(build_apply(fn, args[:-1]), translated_arg)
-        return build_apply(ast_.fn, ast_.arguments)
+            return lam_ast.Apply(build_apply(fn, args[:-1], location), 
+                                 translated_arg, 
+                                 location)
+        return build_apply(ast_.fn, ast_.arguments, ast_.location)
 
     elif isinstance(ast_, j_ast.Array):
         raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, j_ast.BinaryOp):
         if ast_.op == '+':
-            return build_plus_op(ast_.left_arg, ast_.right_arg, my_env)
+            return build_plus_op(ast_.left_arg, ast_.right_arg, my_env, ast_.location)
         else:
             raise Exception('Not translated yet!\n')
 
@@ -66,7 +68,7 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
 
     elif isinstance(ast_, j_ast.Index):
         if isinstance(ast_.target, j_ast.Self) and isinstance(ast_.index, j_ast.LiteralString):
-            return lam_ast.Identifier(ast_.index.value)
+            return lam_ast.Identifier(ast_.index.value, ast_.location)
         else:
             raise Exception('Not translated yet!\n')
 
@@ -123,13 +125,13 @@ def build_record_type_constructor(fields):
     return rec_build(0, len(var_type), var_type, record_type)
 
 
-def build_letrec_and(field_keys, fields, body, env):
+def build_letrec_and(field_keys, fields, body, env, location):
     translated_fields = {}
     for key in field_keys:
         translated_body = translate_to_lambda_ast(fields[key], env)
         name, loc = key
         translated_fields[name] = (translated_body, loc)
-    return lam_ast.LetrecAnd(translated_fields, body)
+    return lam_ast.LetrecAnd(translated_fields, body, location)
 
 
 def get_next_record_id(env):
@@ -144,12 +146,13 @@ def get_next_plus_id(env):
     return plus_id
 
 
-def apply_record(field_keys, record_id, env):
+def apply_record(field_keys, record_id, env, location):
     if not field_keys:
         return lam_ast.Identifier(record_id)
     name, loc = field_keys[-1]
-    return lam_ast.Apply(apply_record(field_keys[:-1], record_id, env), 
-                         lam_ast.Identifier(name, loc))
+    return lam_ast.Apply(apply_record(field_keys[:-1], record_id, env, location),
+                         lam_ast.Identifier(name, loc),
+                         location)
 
 
 def translate_field_name(name):
@@ -159,15 +162,18 @@ def translate_field_name(name):
         raise Exception(f"Expected LiteralString but got {name.__class__}")
 
 
-def build_plus_op(left_arg, right_arg, env):
+def build_plus_op(left_arg, right_arg, env, location):
     if isinstance(right_arg, j_ast.Object):
         base_obj = translate_to_lambda_ast(left_arg, env)
         child_obj = translate_to_lambda_ast(right_arg, env)
-        return lam_ast.Inherit(base_obj, child_obj)
+        return lam_ast.Inherit(base_obj, child_obj, location)
     else:
         var = TypeVariable()
         plus_id = get_next_plus_id(env)
         env[plus_id] = Function(var, Function(var, var))
         return lam_ast.Apply(lam_ast.Apply(lam_ast.Identifier(plus_id),
-                           translate_to_lambda_ast(left_arg, env)),
-                     translate_to_lambda_ast(right_arg, env))
+                                           translate_to_lambda_ast(
+                                               left_arg, env),
+                                           location),
+                             translate_to_lambda_ast(right_arg, env),
+                             location)

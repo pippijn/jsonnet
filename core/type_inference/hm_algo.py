@@ -86,7 +86,7 @@ def analyse(node, env, non_generic=None):
         fun_type = analyse(node.fn, env, non_generic)
         arg_type = analyse(node.arg, env, non_generic)
         result_type = TypeVariable()
-        unify(Function(arg_type, result_type), fun_type)
+        unify(Function(arg_type, result_type), fun_type, node.location)
         return result_type
     elif isinstance(node, Lambda):
         arg_type = TypeVariable()
@@ -129,8 +129,8 @@ def analyse(node, env, non_generic=None):
         # and its field names can be used with different types within different objects
         result_type = TypeVariable()
         left_row_copy = type_copy(left_row)
-        unify(left_row_copy, result_type)
-        unify(right_row, result_type)
+        unify(left_row_copy, result_type, node.location)
+        unify(right_row, result_type, node.location)
         return result_type
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
@@ -210,7 +210,6 @@ def unify(t1, t2, loc=None):
     Raises:
         InferenceError: Raised if the types cannot be unified.
     """
-
     a = prune(t1)
     b = prune(t2)
     if isinstance(a, TypeVariable):
@@ -219,17 +218,17 @@ def unify(t1, t2, loc=None):
                 raise InferenceError("recursive unification")
             a.instance = b
     elif (isinstance(a, TypeOperator) or isinstance(a, TypeRowOperator)) and isinstance(b, TypeVariable):
-        unify(b, a)
+        unify(b, a, loc)
     elif isinstance(a, TypeOperator) and isinstance(b, TypeOperator):
         if a.name != b.name or len(a.types) != len(b.types):
-            raise InferenceError(
-                "Type mismatch: {0} != {1} at {2}".format(str(a), str(b), loc))
+            err_msg = "Type mismatch: {0} != {1} at {2}".format(str(a), str(b), loc)
+            raise InferenceError(err_msg)
         for p, q in zip(a.types, b.types):
-            unify(p, q)
+            unify(p, q, loc)
     elif isinstance(a, TypeRowOperator) and isinstance(b, TypeRowOperator):
         for k in a.fields:
             if k in b.fields:
-                unify(a.fields[k], b.fields[k])
+                unify(a.fields[k], b.fields[k], loc)
         unified_fields = a.fields.copy()
         unified_fields.update(b.fields)
         b.fields = unified_fields
