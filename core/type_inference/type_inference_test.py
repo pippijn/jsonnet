@@ -146,6 +146,22 @@ class TestTypeInference(unittest.TestCase):
         )"""
         error_msg = "Type mismatch: string != number"
         self.assertEqual(infer.run(example), error_msg)
+    
+    def test_inheritance_failure(self):
+        example = """(
+            { 
+                local currency = { 
+                    euro: self.dollar, 
+                    dollar: self.euro 
+                }, 
+                x: currency { 
+                    euro: 1, 
+                    dollar: 'smth' 
+                } 
+            }
+        )"""
+        error_msg = "Type mismatch: string != number"
+        self.assertEqual(infer.run(example), error_msg)
 
     def test_inheritance2(self):
         example = """(
@@ -181,6 +197,7 @@ def suite():
     suite.addTest(TestTypeInference('test_using_local_obj_with_inheritance'))
     suite.addTest(TestTypeInference('test_inherit_param_inside_func'))
     suite.addTest(TestTypeInference('test_inherit_base_twice'))
+    suite.addTest(TestTypeInference('test_inheritance_failure'))
     suite.addTest(TestTypeInference('test_inheritance2'))
     return suite
 
