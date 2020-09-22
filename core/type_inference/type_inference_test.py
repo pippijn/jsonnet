@@ -196,6 +196,18 @@ class TestTypeInference(unittest.TestCase):
         inferred_type = "{z: {t: number, x: number, y: number}}"
         self.assertEqual(infer.run(example), inferred_type)
     
+    def test_unrecognized_child_field(self):
+        example = """(
+            { 
+                local base = { 
+                    z: self.k
+                }, 
+                x: base {k: 1} 
+            }
+        )"""
+        inferred_type = "{x: {k: number, z: number}}"
+        self.assertEqual(infer.run(example), inferred_type)
+    
 
 def suite():
     suite = unittest.TestSuite()
@@ -215,6 +227,7 @@ def suite():
     suite.addTest(TestTypeInference('test_inheritance_failure'))
     suite.addTest(TestTypeInference('test_inheritance2'))
     suite.addTest(TestTypeInference('test_unrecognized_base_field'))
+    suite.addTest(TestTypeInference('test_unrecognized_child_field'))
     return suite
 
 
