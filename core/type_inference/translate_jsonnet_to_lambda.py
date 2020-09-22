@@ -5,6 +5,7 @@ from lambda_types import TypeVariable, TypeRowOperator, Function, TypeOperator
 
 def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
     if isinstance(ast_, j_ast.Object):
+        location = translate_location(ast_.location)
         ast_.fields = {
             translate_field_name(name): val for name, val in ast_.fields.items()
         }
@@ -13,10 +14,11 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
         my_env[record_id] = record
 
         field_keys = list(ast_.fields.keys())
-        body = apply_record(field_keys, record_id, my_env, ast_.location)
-        return build_letrec_and(field_keys, ast_.fields, body, my_env, ast_.location)
+        body = apply_record(field_keys, record_id, my_env, location)
+        return build_letrec_and(field_keys, ast_.fields, body, my_env, location)
 
     elif isinstance(ast_, j_ast.Local):
+        location = translate_location(ast_.location)
         bind_dic = {}
         for bind in ast_.binds:
             translated_body = translate_to_lambda_ast(bind.body, my_env)
@@ -26,9 +28,10 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
             body.bindings.update(bind_dic)
             return body
         else:
-            return lam_ast.LetrecAnd(bind_dic, body, ast_.location)
+            return lam_ast.LetrecAnd(bind_dic, body, location)
 
     elif isinstance(ast_, j_ast.Apply):
+        location = translate_location(ast_.location)
         def build_apply(fn, args, location):
             if not args:
                 return translate_to_lambda_ast(fn, my_env)
@@ -36,14 +39,15 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
             return lam_ast.Apply(build_apply(fn, args[:-1], location), 
                                  translated_arg, 
                                  location)
-        return build_apply(ast_.fn, ast_.arguments, ast_.location)
+        return build_apply(ast_.fn, ast_.arguments, location)
 
     elif isinstance(ast_, j_ast.Array):
         raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, j_ast.BinaryOp):
+        location = translate_location(ast_.location)
         if ast_.op == '+':
-            return build_plus_op(ast_.left_arg, ast_.right_arg, my_env, ast_.location)
+            return build_plus_op(ast_.left_arg, ast_.right_arg, my_env, location)
         else:
             raise Exception('Not translated yet!\n')
 
@@ -67,19 +71,23 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
         raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, j_ast.Index):
+        location = translate_location(ast_.location)
         if isinstance(ast_.target, j_ast.Self) and isinstance(ast_.index, j_ast.LiteralString):
-            return lam_ast.Identifier(ast_.index.value, ast_.location)
+            return lam_ast.Identifier(ast_.index.value, location)
         else:
             raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, j_ast.LiteralBoolean):
-        return lam_ast.LiteralBoolean(ast_.value, ast_.location)
+        location = translate_location(ast_.location)
+        return lam_ast.LiteralBoolean(ast_.value, location)
 
     elif isinstance(ast_, j_ast.LiteralNumber):
-        return lam_ast.LiteralNumber(ast_.value, ast_.location)
+        location = translate_location(ast_.location)
+        return lam_ast.LiteralNumber(ast_.value, location)
 
     elif isinstance(ast_, j_ast.LiteralString):
-        return lam_ast.LiteralString(ast_.value, ast_.location)
+        location = translate_location(ast_.location)
+        return lam_ast.LiteralString(ast_.value, location)
 
     elif isinstance(ast_, j_ast.LiteralNull):
         return lam_ast.Identifier("null")
@@ -97,7 +105,8 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
         raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, j_ast.Var):
-        return lam_ast.Identifier(ast_.id, ast_.location)
+        location = translate_location(ast_.location)
+        return lam_ast.Identifier(ast_.id, location)
 
     else:
         print(ast_.__class__)
@@ -156,8 +165,9 @@ def apply_record(field_keys, record_id, env, location):
 
 
 def translate_field_name(name):
+    location = translate_location(name.location)
     if isinstance(name, j_ast.LiteralString):
-        return (name.value, name.location)
+        return (name.value, location)
     else:
         raise Exception(f"Expected LiteralString but got {name.__class__}")
 
@@ -177,3 +187,6 @@ def build_plus_op(left_arg, right_arg, env, location):
                                            location),
                              translate_to_lambda_ast(right_arg, env),
                              location)
+
+def translate_location(location):
+    return lam_ast.Location(location.begin, location.end)

@@ -221,10 +221,9 @@ def unify(t1, t2, loc=None, field_name=None):
         unify(b, a, loc)
     elif isinstance(a, TypeOperator) and isinstance(b, TypeOperator):
         if a.name != b.name or len(a.types) != len(b.types):
-            err_msg = "Type mismatch"
+            err_msg = "Type mismatch: {0} != {1}, {2}".format(str(a), str(b), loc)
             if field_name:
-                err_msg += f" in the field '{field_name}'"
-            err_msg += ": {0} != {1} at {2}".format(str(a), str(b), loc)
+                err_msg += f", field '{field_name}'"
             raise InferenceError(err_msg)
         for p, q in zip(a.types, b.types):
             unify(p, q, loc)

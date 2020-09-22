@@ -116,3 +116,17 @@ class Inherit(object):
 
     def __str__(self):
         return "({child} inherits {base})".format(base=self.base, child=self.child)
+
+
+class Location(object):
+    def __init__(self, begin, end):
+        self.line1, self.col1 = begin.split(':')
+        self.line2, self.col2 = end.split(':')
+
+    def __str__(self):
+        str_view = ""
+        if self.line1 == self.line2:
+            str_view += f"line {self.line1}"
+        else:
+            str_view += f"lines {self.line1}-{self.line2}"
+        return str_view
