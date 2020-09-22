@@ -124,7 +124,13 @@ def analyse(node, env, non_generic=None):
         return analyse(node.body, new_env, new_non_generic)
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
-        right_row = analyse(node.child, env, non_generic)
+        new_env = env.copy()
+        if is_base_type_row(node.base, env):
+            base_fields = prune(env[node.base.name]).fields
+            for v, tp in base_fields.items():
+                new_env[v] = tp
+        right_row = analyse(node.child, new_env, non_generic)
+        
         # since we work with the copy of base class, we over-approximate it,
         # and its field names can be used with different types within different objects
         result_type = TypeVariable()
@@ -313,6 +319,14 @@ def occurs_in(t, types):
         True if t occurs in any of types, otherwise False
     """
     return any(occurs_in_type(t, t2) for t2 in types)
+
+
+def is_base_type_row(base, env):
+    if isinstance(base, Identifier):
+        if base.name in env:
+            base_type = prune(env[base.name])
+            return isinstance(base_type, TypeRowOperator)
+    return False
 
 
 # ==================================================================#
