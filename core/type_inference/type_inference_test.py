@@ -51,7 +51,7 @@ class TestTypeInference(unittest.TestCase):
                 },
             }
         )"""
-        error_msg = "Type mismatch: string != number"
+        error_msg = "Type mismatch: string != number, lines 6-8, field 'name'"
         self.assertEqual(infer.run(example), error_msg)
 
     def test_mutual_rec(self):
@@ -95,7 +95,7 @@ class TestTypeInference(unittest.TestCase):
                 z: self.x + self.y
             }
         )"""
-        error_msg = "Type mismatch: boolean != number"
+        error_msg = "Type mismatch: boolean != number, line 5"
         self.assertEqual(infer.run(example), error_msg)
     
     def test_using_local_obj_with_inheritance(self):
