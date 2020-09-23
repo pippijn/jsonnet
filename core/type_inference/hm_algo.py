@@ -125,10 +125,7 @@ def analyse(node, env, non_generic=None):
     elif isinstance(node, Inherit):
         left_row = analyse(node.base, env, non_generic)
         new_env = env.copy()
-        if is_base_type_row(node.base, env):
-            base_fields = prune(env[node.base.name]).fields
-            for v, tp in base_fields.items():
-                new_env[v] = tp
+        update_env_with_obj_type_info(node.base, new_env)
         right_row = analyse(node.child, new_env, non_generic)
         
         # since we work with the copy of base class, we over-approximate it,
@@ -321,12 +318,25 @@ def occurs_in(t, types):
     return any(occurs_in_type(t, t2) for t2 in types)
 
 
-def is_base_type_row(base, env):
-    if isinstance(base, Identifier):
-        if base.name in env:
-            base_type = prune(env[base.name])
-            return isinstance(base_type, TypeRowOperator)
-    return False
+def update_env_with_obj_type_info(obj, env):
+    if isinstance(obj, Identifier):
+        if obj.name not in env:
+            return
+        obj_type = prune(env[obj.name])
+        if isinstance(obj_type, TypeRowOperator):
+            fields = obj_type.fields
+            for v, tp in fields.items():
+                env[v] = tp
+    elif isinstance(obj, Apply):
+        if obj.fn.name not in env:
+            return
+        obj_type = prune(env[obj.fn.name])
+        if isinstance(obj_type, Function):
+            return_type = prune(obj_type.types[1])
+            if isinstance(return_type, TypeRowOperator):
+                fields = return_type.fields
+                for v, tp in fields.items():
+                    env[v] = tp
 
 
 # ==================================================================#
