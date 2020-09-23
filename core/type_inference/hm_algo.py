@@ -337,6 +337,8 @@ def update_env_with_obj_type_info(obj, env):
                 fields = return_type.fields
                 for v, tp in fields.items():
                     env[v] = tp
+    else:
+        raise Exception(f'Unexpected type of base: {obj.__class__.__name__}')
 
 
 # ==================================================================#
