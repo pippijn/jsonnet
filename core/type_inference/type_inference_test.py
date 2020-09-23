@@ -144,8 +144,8 @@ class TestTypeInference(unittest.TestCase):
                 } 
             }
         )"""
-        error_msg = "Type mismatch: string != number"
-        self.assertEqual(infer.run(example), error_msg)
+        inferred_type = "{x: {a: number}, y: {a: string}}"
+        self.assertEqual(infer.run(example), inferred_type)
     
     def test_inheritance_failure(self):
         example = """(
