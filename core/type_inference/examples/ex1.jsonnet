@@ -1,13 +1,10 @@
 { 
     local base = { 
-        local b = self.a {
-            z: 3
-        },
-        a: {
+        m: {
             z: null    
         } 
     }, 
-    x: base {k: 1}, 
-    y: base { s: "str" } 
+    x: base {}, 
+    y: base {} 
 }
 

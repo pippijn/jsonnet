@@ -13,13 +13,9 @@ class TestTypeInference(unittest.TestCase):
 
     def test_string(self):
         self.assertEqual(infer.run("{x: 'a'}"), "{x: string}")
-    
+
     def test_empty_object(self):
-        example = """(
-            {}
-        )"""
-        inferred_type = "{}"
-        self.assertEqual(infer.run(example), inferred_type)
+        self.assertEqual(infer.run("{}"), "{}")
 
     def test_inheritance(self):
         example = """(
@@ -40,7 +36,7 @@ class TestTypeInference(unittest.TestCase):
         inferred_type = "{student: {name: string, age: number, best_friend: {age: number, has_friend: boolean, name: string}}}"
         self.assertEqual(infer.run(example), inferred_type)
 
-    def test_type_mismatch_error(self):
+    def test_inheritance_type_error(self):
         example = """(
             {
                 local person = {
@@ -54,7 +50,7 @@ class TestTypeInference(unittest.TestCase):
         error_msg = "Type mismatch: string != number, lines 6-8, field 'name'"
         self.assertEqual(infer.run(example), error_msg)
 
-    def test_mutual_rec(self):
+    def test_mutual_recursion(self):
         example = """(
             {
                 euro: self.dol,
@@ -75,7 +71,7 @@ class TestTypeInference(unittest.TestCase):
         )"""
         inferred_type = "{z: number, t: number}"
         self.assertEqual(infer.run(example), inferred_type)
-    
+
     def test_binary_plus(self):
         example = """(
             {
@@ -86,7 +82,7 @@ class TestTypeInference(unittest.TestCase):
         )"""
         inferred_type = "{x: number, y: number, z: number}"
         self.assertEqual(infer.run(example), inferred_type)
-    
+
     def test_binary_plus_type_error(self):
         example = """(
             {
@@ -97,8 +93,8 @@ class TestTypeInference(unittest.TestCase):
         )"""
         error_msg = "Type mismatch: boolean != number, line 5"
         self.assertEqual(infer.run(example), error_msg)
-    
-    def test_using_local_obj_with_inheritance(self):
+
+    def test_field_inheritance(self):
         example = """(
             {
                 local a = self.b {
@@ -112,8 +108,8 @@ class TestTypeInference(unittest.TestCase):
         )"""
         inferred_type = "{b: {d: number}, c: {e: boolean, d: number}}"
         self.assertEqual(infer.run(example), inferred_type)
-    
-    def test_inherit_param_inside_func(self):
+
+    def test_function_param_inheritance(self):
         example = """(
             { 
                 local f(base) = { 
@@ -129,7 +125,7 @@ class TestTypeInference(unittest.TestCase):
         )"""
         error_msg = "Type mismatch: string != number"
         self.assertEqual(infer.run(example), error_msg)
-    
+
     def test_inherit_base_twice(self):
         example = """(
             { 
@@ -146,7 +142,7 @@ class TestTypeInference(unittest.TestCase):
         )"""
         inferred_type = "{x: {a: number}, y: {a: string}}"
         self.assertEqual(infer.run(example), inferred_type)
-    
+
     def test_inheritance_failure(self):
         example = """(
             { 
@@ -163,24 +159,21 @@ class TestTypeInference(unittest.TestCase):
         error_msg = "Type mismatch: string != number"
         self.assertEqual(infer.run(example), error_msg)
 
-    def test_inheritance2(self):
+    def test_inherit_base_twice_with_null_field(self):
         example = """(
             { 
                 local base = { 
-                    local b = self.a {
-                        z: 3,
-                    },
-                    a: {
+                    m: {
                         z: null    
                     },
                 }, 
-                x: base {k: 1}, 
-                y: base {s: "str" } 
+                x: base {}, 
+                y: base {} 
             }
         )"""
-        inferred_type = "{x: {k: number, a: {z: number}}, y: {s: string, a: {z: number}}}"
+        inferred_type = "{x: {m: {z: b}}, y: {m: {z: c}}}"
         self.assertEqual(infer.run(example), inferred_type)
-    
+
     def test_unrecognized_base_field(self):
         example = """(
             { 
@@ -195,21 +188,21 @@ class TestTypeInference(unittest.TestCase):
         )"""
         inferred_type = "{z: {t: number, x: number, y: number}}"
         self.assertEqual(infer.run(example), inferred_type)
-    
-    def test_unrecognized_base__func_field(self):
+
+    def test_unrecognized_base_func_field(self):
         example = """(
             { 
                 local f(base) = { 
-                    a: base
+                    x: base
                 }, 
                 res: f(1) {
-                    b: self.a
+                    y: self.x
                 } 
             }
         )"""
-        inferred_type = "{z: {t: number, x: number, y: number}}"
+        inferred_type = "{res: {y: number, x: number}}"
         self.assertEqual(infer.run(example), inferred_type)
-    
+
     def test_unrecognized_child_field(self):
         example = """(
             { 
@@ -221,7 +214,7 @@ class TestTypeInference(unittest.TestCase):
         )"""
         inferred_type = "{x: {k: number, z: number}}"
         self.assertEqual(infer.run(example), inferred_type)
-    
+
     def inheritance_that_violates_type_copy(self):
         example = """(
             {
@@ -237,6 +230,7 @@ class TestTypeInference(unittest.TestCase):
         inferred_type = "{x: {z: boolean, t: number} y: {t: number}}"
         self.assertEqual(infer.run(example), inferred_type)
 
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(TestTypeInference('test_number'))
@@ -244,18 +238,18 @@ def suite():
     suite.addTest(TestTypeInference('test_string'))
     suite.addTest(TestTypeInference('test_empty_object'))
     suite.addTest(TestTypeInference('test_inheritance'))
-    suite.addTest(TestTypeInference('test_mutual_rec'))
-    suite.addTest(TestTypeInference('test_type_mismatch_error'))
+    suite.addTest(TestTypeInference('test_mutual_recursion'))
+    suite.addTest(TestTypeInference('test_inheritance_type_error'))
     suite.addTest(TestTypeInference('test_local_field_rec'))
     suite.addTest(TestTypeInference('test_binary_plus'))
     suite.addTest(TestTypeInference('test_binary_plus_type_error'))
-    suite.addTest(TestTypeInference('test_using_local_obj_with_inheritance'))
-    suite.addTest(TestTypeInference('test_inherit_param_inside_func'))
+    suite.addTest(TestTypeInference('test_field_inheritance'))
+    suite.addTest(TestTypeInference('test_function_param_inheritance'))
     suite.addTest(TestTypeInference('test_inherit_base_twice'))
     suite.addTest(TestTypeInference('test_inheritance_failure'))
-    suite.addTest(TestTypeInference('test_inheritance2'))
+    suite.addTest(TestTypeInference('test_inherit_base_twice_with_null_field'))
     suite.addTest(TestTypeInference('test_unrecognized_base_field'))
-    suite.addTest(TestTypeInference('test_unrecognized_base__func_field'))
+    suite.addTest(TestTypeInference('test_unrecognized_base_func_field'))
     suite.addTest(TestTypeInference('test_unrecognized_child_field'))
     suite.addTest(TestTypeInference('inheritance_that_violates_type_copy'))
     return suite
