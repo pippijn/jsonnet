@@ -215,7 +215,7 @@ class TestTypeInference(unittest.TestCase):
         inferred_type = "{x: {k: number, z: number}}"
         self.assertEqual(infer.run(example), inferred_type)
 
-    def inheritance_that_violates_type_copy(self):
+    def test_inheritance_that_violates_type_copy(self):
         example = """(
             {
                 x: self.y {
@@ -251,7 +251,7 @@ def suite():
     suite.addTest(TestTypeInference('test_unrecognized_base_field'))
     suite.addTest(TestTypeInference('test_unrecognized_base_func_field'))
     suite.addTest(TestTypeInference('test_unrecognized_child_field'))
-    suite.addTest(TestTypeInference('inheritance_that_violates_type_copy'))
+    suite.addTest(TestTypeInference('test_inheritance_that_violates_type_copy'))
     return suite
 
 
