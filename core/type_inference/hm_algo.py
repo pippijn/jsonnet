@@ -1,18 +1,13 @@
-#!/usr/bin/env python
-"""
-.. module:: inference
-   :synopsis: An implementation of the Hindley Milner type checking algorithm
-              based on the Scala code by Andrew Forrest, the Perl code by
-              Nikita Borisov and the paper "Basic Polymorphic Typechecking"
-              by Cardelli.
-.. moduleauthor:: Robert Smallshire
+""" An implementation of the Hindley Milner type checking algorithm
+    based on implementation of Robert Smallshire. The algorithm was modified 
+    to process additionaly introduced AST nodes and types. 
+    Source code: https://github.com/rob-smallshire/hindley-milner-python
 """
 from __future__ import print_function
-from lambda_ast import *
-from lambda_types import *
-import copy
+import lambda_ast as l_ast
+import lambda_types as l_type
 
-# =======================================================#
+# ----------------------------------------------------------------
 # Exception types
 
 class InferenceError(Exception):
@@ -38,8 +33,7 @@ class ParseError(Exception):
     def __str__(self):
         return str(self.message)
 
-
-# =======================================================#
+# ----------------------------------------------------------------
 # Type inference machinery
 
 def analyse(node, env, non_generic=None):
@@ -70,39 +64,39 @@ def analyse(node, env, non_generic=None):
     if non_generic is None:
         non_generic = set()
 
-    if isinstance(node, Identifier):
+    if isinstance(node, l_ast.Identifier):
         result_type = get_type(node.name, env, non_generic)
         return result_type
-    elif isinstance(node, LiteralNumber):
-        result_type = Number
+    elif isinstance(node, l_ast.LiteralNumber):
+        result_type = l_type.Number
         return result_type
-    elif isinstance(node, LiteralBoolean):
-        result_type = Bool
+    elif isinstance(node, l_ast.LiteralBoolean):
+        result_type = l_type.Bool
         return result_type
-    elif isinstance(node, LiteralString):
-        result_type = String
+    elif isinstance(node, l_ast.LiteralString):
+        result_type = l_type.String
         return result_type
-    elif isinstance(node, Apply):
+    elif isinstance(node, l_ast.Apply):
         fun_type = analyse(node.fn, env, non_generic)
         arg_type = analyse(node.arg, env, non_generic)
-        result_type = TypeVariable()
-        unify(Function(arg_type, result_type), fun_type, node.location)
+        result_type = l_type.TypeVariable()
+        unify(l_type.Function(arg_type, result_type), fun_type, node.location)
         return result_type
-    elif isinstance(node, Lambda):
-        arg_type = TypeVariable()
+    elif isinstance(node, l_ast.Lambda):
+        arg_type = l_type.TypeVariable()
         new_env = env.copy()
         new_env[node.v] = arg_type
         new_non_generic = non_generic.copy()
         new_non_generic.add(arg_type)
         result_type = analyse(node.body, new_env, new_non_generic)
-        return Function(arg_type, result_type)
-    elif isinstance(node, Let):
+        return l_type.Function(arg_type, result_type)
+    elif isinstance(node, l_ast.Let):
         defn_type = analyse(node.defn, env, non_generic)
         new_env = env.copy()
         new_env[node.v] = defn_type
         return analyse(node.body, new_env, non_generic)
-    elif isinstance(node, Letrec):
-        new_type = TypeVariable()
+    elif isinstance(node, l_ast.Letrec):
+        new_type = l_type.TypeVariable()
         new_env = env.copy()
         new_env[node.v] = new_type
         new_non_generic = non_generic.copy()
@@ -110,11 +104,11 @@ def analyse(node, env, non_generic=None):
         defn_type = analyse(node.defn, new_env, new_non_generic)
         unify(new_type, defn_type, node.location)
         return analyse(node.body, new_env, non_generic)
-    elif isinstance(node, LetrecAnd):
+    elif isinstance(node, l_ast.LetrecAnd):
         new_env = env.copy()
         new_non_generic = non_generic.copy()
         for v in node.bindings:
-            new_type = TypeVariable()
+            new_type = l_type.TypeVariable()
             new_env[v] = new_type
             new_non_generic.add(new_type)
         for v, (defn, loc) in node.bindings.items():
@@ -122,15 +116,15 @@ def analyse(node, env, non_generic=None):
             defn_type = analyse(defn, new_env, new_non_generic)
             unify(v_type, defn_type, loc, v)
         return analyse(node.body, new_env, new_non_generic)
-    elif isinstance(node, Inherit):
+    elif isinstance(node, l_ast.Inherit):
         left_row = analyse(node.base, env, non_generic)
         new_env = env.copy()
         update_env_with_obj_type_info(node.base, new_env)
         right_row = analyse(node.child, new_env, non_generic)
-        
+
         # since we work with the copy of base class, we over-approximate it,
         # and its field names can be used with different types within different objects
-        result_type = TypeVariable()
+        result_type = l_type.TypeVariable()
         left_row_copy = type_copy(left_row)
         unify(left_row_copy, result_type, node.location)
         unify(right_row, result_type, node.location)
@@ -170,31 +164,34 @@ def fresh(t, non_generic):
 
     def freshrec(tp):
         p = prune(tp)
-        if isinstance(p, TypeVariable):
+        if isinstance(p, l_type.TypeVariable):
             if is_generic(p, non_generic):
                 if p not in mappings:
-                    mappings[p] = TypeVariable()
+                    mappings[p] = l_type.TypeVariable()
                 return mappings[p]
             else:
                 return p
-        elif isinstance(p, TypeOperator):
-            return TypeOperator(p.name, [freshrec(x) for x in p.types])
-        elif isinstance(p, TypeRowOperator):
-            return TypeRowOperator({k: freshrec(v) for k, v in p.fields.items()})
+        elif isinstance(p, l_type.TypeOperator):
+            return l_type.TypeOperator(p.name, [freshrec(x) for x in p.types])
+        elif isinstance(p, l_type.TypeRowOperator):
+            return l_type.TypeRowOperator({k: freshrec(v) for k, v in p.fields.items()})
 
     return freshrec(t)
 
+
 def type_copy(t):
-    if isinstance(t, TypeVariable):
-        new_instance = TypeVariable()
+    if isinstance(t, l_type.TypeVariable):
+        new_instance = l_type.TypeVariable()
         new_instance.id = t.id
         if t.instance:
             new_instance.instance = type_copy(t.instance)
             new_instance.__name = t.name
-    elif isinstance(t, TypeOperator):
-        new_instance = TypeOperator(t.name, [type_copy(x) for x in t.types])
-    elif isinstance(t, TypeRowOperator):
-        new_instance = TypeRowOperator({k: type_copy(v) for k, v in t.fields.items()})
+    elif isinstance(t, l_type.TypeOperator):
+        new_instance = l_type.TypeOperator(
+            t.name, [type_copy(x) for x in t.types])
+    elif isinstance(t, l_type.TypeRowOperator):
+        new_instance = l_type.TypeRowOperator(
+            {k: type_copy(v) for k, v in t.fields.items()})
     return new_instance
 
 
@@ -215,22 +212,23 @@ def unify(t1, t2, loc=None, field_name=None):
     """
     a = prune(t1)
     b = prune(t2)
-    if isinstance(a, TypeVariable):
+    if isinstance(a, l_type.TypeVariable):
         if a != b:
             if occurs_in_type(a, b):
                 raise InferenceError("recursive unification")
             a.instance = b
-    elif (isinstance(a, TypeOperator) or isinstance(a, TypeRowOperator)) and isinstance(b, TypeVariable):
+    elif (isinstance(a, l_type.TypeOperator) or isinstance(a, l_type.TypeRowOperator)) and isinstance(b, l_type.TypeVariable):
         unify(b, a, loc)
-    elif isinstance(a, TypeOperator) and isinstance(b, TypeOperator):
+    elif isinstance(a, l_type.TypeOperator) and isinstance(b, l_type.TypeOperator):
         if a.name != b.name or len(a.types) != len(b.types):
-            err_msg = "Type mismatch: {0} != {1}, {2}".format(str(a), str(b), loc)
+            err_msg = "Type mismatch: {0} != {1}, {2}".format(
+                str(a), str(b), loc)
             if field_name:
                 err_msg += f", field '{field_name}'"
             raise InferenceError(err_msg)
         for p, q in zip(a.types, b.types):
             unify(p, q, loc)
-    elif isinstance(a, TypeRowOperator) and isinstance(b, TypeRowOperator):
+    elif isinstance(a, l_type.TypeRowOperator) and isinstance(b, l_type.TypeRowOperator):
         for k in a.fields:
             if k in b.fields:
                 unify(a.fields[k], b.fields[k], loc, k)
@@ -257,7 +255,7 @@ def prune(t):
     Returns:
         An uninstantiated TypeVariable or a TypeOperator
     """
-    if isinstance(t, TypeVariable):
+    if isinstance(t, l_type.TypeVariable):
         if t.instance is not None:
             t.instance = prune(t.instance)
             return t.instance
@@ -298,9 +296,9 @@ def occurs_in_type(v, type2):
     pruned_type2 = prune(type2)
     if pruned_type2 == v:
         return True
-    elif isinstance(pruned_type2, TypeOperator):
+    elif isinstance(pruned_type2, l_type.TypeOperator):
         return occurs_in(v, pruned_type2.types)
-    elif isinstance(pruned_type2, TypeRowOperator):
+    elif isinstance(pruned_type2, l_type.TypeRowOperator):
         return occurs_in(v, pruned_type2.fields.values())
     return False
 
@@ -319,21 +317,21 @@ def occurs_in(t, types):
 
 
 def update_env_with_obj_type_info(obj, env):
-    if isinstance(obj, Identifier):
+    if isinstance(obj, l_ast.Identifier):
         if obj.name not in env:
             return
         obj_type = prune(env[obj.name])
-        if isinstance(obj_type, TypeRowOperator):
+        if isinstance(obj_type, l_type.TypeRowOperator):
             fields = obj_type.fields
             for v, tp in fields.items():
                 env[v] = tp
-    elif isinstance(obj, Apply):
+    elif isinstance(obj, l_ast.Apply):
         if obj.fn.name not in env:
             return
         obj_type = prune(env[obj.fn.name])
-        if isinstance(obj_type, Function):
+        if isinstance(obj_type, l_type.Function):
             return_type = prune(obj_type.types[1])
-            if isinstance(return_type, TypeRowOperator):
+            if isinstance(return_type, l_type.TypeRowOperator):
                 fields = return_type.fields
                 for v, tp in fields.items():
                     env[v] = tp
@@ -341,8 +339,6 @@ def update_env_with_obj_type_info(obj, env):
         raise Exception(f'Unexpected type of base: {obj.__class__.__name__}')
 
 
-# ==================================================================#
-# Example code to exercise the above
 def try_exp(env, node):
     """Try to evaluate a type printing the result or reporting errors.
 
@@ -354,101 +350,10 @@ def try_exp(env, node):
         None
     """
     try:
-        with context():
+        with l_type.context():
             t = analyse(node, env)
             print(str(t))
             return str(t)
     except (ParseError, InferenceError) as e:
         print(e)
         return str(e)
-
-
-def main():
-    """The main example program.
-
-    Sets up some predefined types using the type constructors TypeVariable,
-    TypeOperator and Function.  Creates a list of example expressions to be
-    evaluated. Evaluates the expressions, printing the type or errors arising
-    from each.
-
-    Returns:
-        None
-    """
-
-    var1 = TypeVariable()
-    var2 = TypeVariable()
-
-    record_type_2 = TypeRowOperator({'x': var1, 'y': var2})
-    null = Letrec("null", Identifier("null"), Identifier("null"))
-
-    my_env = {
-        "record": Function(var1, Function(var2, record_type_2)),
-        "true": Bool,
-        "times": Function(Number, Function(Number, Number)),
-    }
-
-    examples = {
-        # null example
-        Apply(Apply(Identifier("times"), null), null),
-
-        # object with local variable z
-        Let("z",
-            LiteralNumber(5),
-            Let("x",
-                Identifier("z"),
-                Let("y",
-                    Identifier("true"),
-                    Apply(Apply(Identifier("record"),
-                                Identifier("x")),
-                          Identifier("y"))))),
-
-        # simple object withput internal local variables
-        Let("x",
-            LiteralNumber(3),
-            Let("y",
-                Identifier("x"),
-                Apply(Apply(Identifier("record"),
-                            Identifier("y")),
-                      Identifier("x")))),
-
-        # cyclic declaration
-        # Letrec(x=y and y=x in pair(x,y)) : (var1, var1)
-        LetrecAnd(
-            {
-                "x": Identifier("y"),
-                "y": Identifier("x")
-            },
-            Apply(
-                Apply(
-                    Identifier("record"),
-                    Identifier("x")
-                ),
-                Identifier("y")
-            )
-        ),
-
-        LetrecAnd(
-            {
-                "x": Identifier("z"),
-                "z": Identifier("m"),
-                "m": Identifier("k"),
-                "y": LiteralString("3"),
-                "k": LiteralNumber(5),
-            },
-            Apply(
-                Apply(
-                    Identifier("record"),
-                    Identifier("x")
-                ),
-                Identifier("y")
-            )
-        ),
-
-    }
-
-    for example in examples:
-        try_exp(my_env, example)
-
-
-if __name__ == '__main__':
-    main()

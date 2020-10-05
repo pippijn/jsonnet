@@ -1,8 +1,3 @@
-# =======================================================#
-# Types and type constructors
-import copy
-
-
 class TypeVariableContext:
     def __init__(self):
         self.next_variable_name = None
@@ -23,6 +18,9 @@ _context = TypeVariableContext()
 def context():
     return _context
 
+
+# ----------------------------------------------------------------
+# Types and type constructors
 
 class TypeVariable(object):
     """A type variable standing for an arbitrary type.
@@ -66,7 +64,7 @@ class TypeVariable(object):
 
 
 class TypeRowOperator(object):
-    """An n-ary type constructor which builds a new type from old"""
+    """A row (or record) type constructor used to construct object's type"""
 
     def __init__(self, fields):
         self.fields = fields
@@ -106,9 +104,9 @@ class Function(TypeOperator):
         super(Function, self).__init__("->", [from_type, to_type])
 
 
-# =============================================================#
+# ----------------------------------------------------------------
 # Basic types, constructed with a nullary type constructor
 
-Number = TypeOperator("number", [])  # Basic number: int, float
-Bool = TypeOperator("boolean", [])  # Basic boolean
-String = TypeOperator("string", [])  # string
+Number = TypeOperator("number", [])  
+Bool = TypeOperator("boolean", [])  
+String = TypeOperator("string", [])  
