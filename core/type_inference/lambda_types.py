@@ -2,6 +2,28 @@
 # Types and type constructors
 import copy
 
+
+class TypeVariableContext:
+    def __init__(self):
+        self.next_variable_name = None
+
+    def __enter__(self):
+        if self.next_variable_name is not None:
+            raise Exception(
+                "'with lambda_types.context()' blocks cannot be nested")
+        self.next_variable_name = 'a'
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.next_variable_name = None
+
+
+_context = TypeVariableContext()
+
+
+def context():
+    return _context
+
+
 class TypeVariable(object):
     """A type variable standing for an arbitrary type.
 
@@ -25,9 +47,12 @@ class TypeVariable(object):
         present after analysis consume names.
         """
         if self.__name is None:
-            self.__name = TypeVariable.next_variable_name
-            TypeVariable.next_variable_name = chr(
-                ord(TypeVariable.next_variable_name) + 1)
+            if _context.next_variable_name is None:
+                raise Exception(
+                    "type context is not initialised; please run this code in a 'with lambda_types.context()' block")
+            self.__name = _context.next_variable_name
+            _context.next_variable_name = chr(
+                ord(_context.next_variable_name) + 1)
         return self.__name
 
     def __str__(self):
@@ -38,7 +63,7 @@ class TypeVariable(object):
 
     def __repr__(self):
         return "TypeVariable(id = {0})".format(self.id)
-    
+
 
 class TypeRowOperator(object):
     """An n-ary type constructor which builds a new type from old"""
@@ -55,7 +80,7 @@ class TypeRowOperator(object):
         name_type_pairs = [f"{x[0]}: {x[1]}" for x in self.fields.items()]
 
         return "{{{0}}}".format(', '.join(name_type_pairs))
-    
+
 
 class TypeOperator(object):
     """An n-ary type constructor which builds a new type from old"""
@@ -72,7 +97,7 @@ class TypeOperator(object):
             return "({0} {1} {2})".format(str(self.types[0]), self.name, str(self.types[1]))
         else:
             return "{0} {1}" .format(self.name, ' '.join(self.types))
-    
+
 
 class Function(TypeOperator):
     """A binary type constructor which builds function types"""

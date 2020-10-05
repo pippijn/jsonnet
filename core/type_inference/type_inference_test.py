@@ -171,7 +171,7 @@ class TestTypeInference(unittest.TestCase):
                 y: base {} 
             }
         )"""
-        inferred_type = "{x: {m: {z: b}}, y: {m: {z: c}}}"
+        inferred_type = "{x: {m: {z: a}}, y: {m: {z: b}}}"
         self.assertEqual(infer.run(example), inferred_type)
 
     def test_unrecognized_base_field(self):
@@ -231,30 +231,5 @@ class TestTypeInference(unittest.TestCase):
         self.assertEqual(infer.run(example), inferred_type)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(TestTypeInference('test_number'))
-    suite.addTest(TestTypeInference('test_boolean'))
-    suite.addTest(TestTypeInference('test_string'))
-    suite.addTest(TestTypeInference('test_empty_object'))
-    suite.addTest(TestTypeInference('test_inheritance'))
-    suite.addTest(TestTypeInference('test_mutual_recursion'))
-    suite.addTest(TestTypeInference('test_inheritance_type_error'))
-    suite.addTest(TestTypeInference('test_local_field_rec'))
-    suite.addTest(TestTypeInference('test_binary_plus'))
-    suite.addTest(TestTypeInference('test_binary_plus_type_error'))
-    suite.addTest(TestTypeInference('test_field_inheritance'))
-    suite.addTest(TestTypeInference('test_function_param_inheritance'))
-    suite.addTest(TestTypeInference('test_inherit_base_twice'))
-    suite.addTest(TestTypeInference('test_inheritance_failure'))
-    suite.addTest(TestTypeInference('test_inherit_base_twice_with_null_field'))
-    suite.addTest(TestTypeInference('test_unrecognized_base_field'))
-    suite.addTest(TestTypeInference('test_unrecognized_base_func_field'))
-    suite.addTest(TestTypeInference('test_unrecognized_child_field'))
-    suite.addTest(TestTypeInference('test_inheritance_that_violates_type_copy'))
-    return suite
-
-
 if __name__ == '__main__':
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
+    unittest.main()
