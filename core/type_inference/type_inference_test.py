@@ -229,6 +229,18 @@ class TestTypeInference(unittest.TestCase):
         )"""
         inferred_type = "{x: {z: boolean, t: number} y: {t: number}}"
         self.assertEqual(infer.run(example), inferred_type)
+    
+    def test_field_visibility(self):
+        example = """(
+            {
+                x: 1, 
+                y: {
+                    z: self.x
+                }
+            }
+        )"""
+        error_msg = "Undefined symbol x"
+        self.assertEqual(infer.run(example), error_msg)
 
 
 if __name__ == '__main__':
