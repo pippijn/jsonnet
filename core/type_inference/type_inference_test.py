@@ -241,6 +241,20 @@ class TestTypeInference(unittest.TestCase):
         )"""
         error_msg = "Undefined symbol x"
         self.assertEqual(infer.run(example), error_msg)
+    
+    def test_inherit_before_base_class_definition(self):
+        example = """(
+            { 
+                x: self.y { 
+                    z: 1
+                }, 
+                y: {
+                    k: 1
+                } 
+            }
+        )"""
+        inferred_type = "{x: {z: number, k: number}, y: {k: number}}"
+        self.assertEqual(infer.run(example), inferred_type)
 
 
 if __name__ == '__main__':
