@@ -256,6 +256,18 @@ class TestTypeInference(unittest.TestCase):
         inferred_type = "{x: {z: number, k: number}, y: {k: number}}"
         self.assertEqual(infer.run(example), inferred_type)
 
+    def test_local_outside_main_object(self):
+        example = """(
+            local base = { 
+                z: self.k
+            };
+            { 
+                x: base {k: 1} 
+            }
+
+        )"""
+        inferred_type = "{x: {k: number, z: number}}"
+        self.assertEqual(infer.run(example), inferred_type)
 
 if __name__ == '__main__':
     unittest.main()
