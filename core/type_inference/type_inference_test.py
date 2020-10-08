@@ -94,7 +94,7 @@ class TestTypeInference(unittest.TestCase):
         error_msg = "Type mismatch: boolean != number, line 5"
         self.assertEqual(infer.run(example), error_msg)
 
-    def test_field_inheritance(self):
+    def test_does_inheritance_change_base_obj(self):
         example = """(
             {
                 local a = self.b {
@@ -103,10 +103,9 @@ class TestTypeInference(unittest.TestCase):
                 b: {
                     d: 1,
                 },
-                c: a
             }
         )"""
-        inferred_type = "{b: {d: number}, c: {e: boolean, d: number}}"
+        inferred_type = "{b: {d: number}}"
         self.assertEqual(infer.run(example), inferred_type)
 
     def test_function_param_inheritance(self):
