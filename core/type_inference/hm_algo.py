@@ -236,7 +236,9 @@ def unify(t1, t2, loc=None, field_name=None):
         unified_fields.update(b.fields)
         b.fields = unified_fields
     else:
-        assert 0, "Not unified"
+        assert 0, "{a} and {b} are not unified".format(
+            a=a.__class__.__name__, b=b.__class__.__name__
+        )
 
 
 def prune(t):
