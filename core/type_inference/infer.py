@@ -8,7 +8,7 @@ from translate_jsonnet_to_lambda import translate_to_lambda_ast
 from rename import rename_local
 
 
-def get_jsonnet_ast_str(jsonnet, rebuild=False):
+def get_jsonnet_ast_str(jsonnet, rebuild):
     if rebuild:
         command1 = ['bazel', 'build', '//core/type_inference:print_ast']
         subprocess.run(command1, check=True, text=True)
@@ -33,8 +33,10 @@ def create_init_env():
     return init_env
 
 
-def run(jsonnet_program):
-    jsonnet_ast_str = get_jsonnet_ast_str(jsonnet_program)
+def run(jsonnet_program, rebuild=False):
+    print(jsonnet_program)
+
+    jsonnet_ast_str = get_jsonnet_ast_str(jsonnet_program, rebuild)
     print(f"\nAST:\n{jsonnet_ast_str}")
 
     jsonnet_ast = parse_ast(jsonnet_ast_str)
@@ -60,7 +62,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run type inference.')
     parser.add_argument('--file_path', type=str, required=True,
                         help='path to file with jsonnet program')
+    parser.add_argument('--rebuild', action='store_true', default=False,
+                        help='add this flag to rebuild print_ast.cpp')
     args = parser.parse_args()
+    
     jsonnet_program = read_file(args.file_path)
-    print(jsonnet_program)
-    run(jsonnet_program)
+    run(jsonnet_program, args.rebuild)
