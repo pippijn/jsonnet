@@ -62,9 +62,9 @@ std::ostream &operator<<(std::ostream &out, const Apply *ast)
 
 std::ostream &operator<<(std::ostream &out, const Array *ast)
 {
+    out << "ast.Array(";
     out << &ast->location;
-    out << ",";
-    out << "ast.Array([";
+    out << ", [";
     for (const auto &el : ast->elements) {
         out << el.expr;
         out << ",";
