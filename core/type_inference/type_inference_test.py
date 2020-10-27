@@ -12,7 +12,7 @@ class TestTypeInference(unittest.TestCase):
         self.assertEqual(infer.run("{x: true}"), "{x: boolean}")
 
     def test_string(self):
-        self.assertEqual(infer.run("{x: 'a'}"), "{x: string}")
+        self.assertEqual(infer.run("{x: 'str'}"), "{x: string}")
 
     def test_empty_object(self):
         self.assertEqual(infer.run("{}"), "{}")
@@ -94,18 +94,18 @@ class TestTypeInference(unittest.TestCase):
         error_msg = "Type mismatch: boolean != number, line 5"
         self.assertEqual(infer.run(example), error_msg)
 
-    def test_does_inheritance_change_base_obj(self):
+    def test_if_inheritance_changes_base_obj(self):
         example = """(
             {
-                local a = self.b {
-                    e: true
+                local x = self.y {
+                    x1: true
                 },
-                b: {
-                    d: 1,
+                y: {
+                    y1: 1,
                 },
             }
         )"""
-        inferred_type = "{b: {d: number}}"
+        inferred_type = "{y: {y1: number}}"
         self.assertEqual(infer.run(example), inferred_type)
 
     def test_function_param_inheritance(self):
@@ -113,13 +113,13 @@ class TestTypeInference(unittest.TestCase):
             { 
                 local f(base) = { 
                     x: base { 
-                        a: 3 
+                        z: 3 
                     }, 
                     y: base { 
-                        a: "str" 
+                        z: "str" 
                     } 
                 }, 
-                res: f({ a: null }) 
+                res: f({ z: null }) 
             }
         )"""
         error_msg = "Type mismatch: string != number"
@@ -129,17 +129,17 @@ class TestTypeInference(unittest.TestCase):
         example = """(
             { 
                 local base = { 
-                    a: null 
+                    z: null 
                 }, 
                 x: base { 
-                    a: 3 
+                    z: 3 
                 }, 
                 y: base { 
-                    a: "str" 
+                    z: "str" 
                 } 
             }
         )"""
-        inferred_type = "{x: {a: number}, y: {a: string}}"
+        inferred_type = "{x: {z: number}, y: {z: string}}"
         self.assertEqual(infer.run(example), inferred_type)
 
     def test_inheritance_failure(self):
@@ -224,7 +224,6 @@ class TestTypeInference(unittest.TestCase):
                     t: 1,
                 },
             }
-
         )"""
         inferred_type = "{x: {z: boolean, t: number} y: {t: number}}"
         self.assertEqual(infer.run(example), inferred_type)
@@ -258,23 +257,14 @@ class TestTypeInference(unittest.TestCase):
     def test_local_outside_main_object(self):
         example = """(
             local base = { 
-                z: self.k
+                z: self.y
             };
             { 
-                x: base {k: 1} 
+                x: base {y: 1} 
             }
 
         )"""
-        inferred_type = "{x: {k: number, z: number}}"
-        self.assertEqual(infer.run(example), inferred_type)
-
-    def test_str_format_with_array_in_rhs(self):
-        example = """(
-            { 
-                x: "nums: %s, %s" % [1, 2]
-            }
-        )"""
-        inferred_type = "{x: string}"
+        inferred_type = "{x: {y: number, z: number}}"
         self.assertEqual(infer.run(example), inferred_type)
 
 
