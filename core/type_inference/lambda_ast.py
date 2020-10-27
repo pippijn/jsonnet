@@ -60,7 +60,7 @@ class Letrec(object):
 
 
 class LetrecAnd(object):
-    """Letrec binding"""
+    """LetrecAnd binding"""
 
     def __init__(self, bindings, body, location=None):
         self.bindings = bindings
@@ -68,10 +68,10 @@ class LetrecAnd(object):
         self.location = location
 
     def __str__(self):
-        str_view = "(letrec_and {"
-        for v, (defn, loc) in self.bindings.items():
-            str_view += f"{v}: ({defn}, {loc}), "
-        str_view += f"}} in {self.body})"
+        str_view = "letrec_and(bindings = {"
+        bindings = [f"{v}: ({loc}, {defn})" for v, (defn, loc) in self.bindings.items()]
+        bindings_str = ', '.join(bindings)
+        str_view += f"{bindings_str}}}, body = {self.body})"
         return str_view
 
 
@@ -109,6 +109,8 @@ class LiteralBoolean(object):
 
 
 class Inherit(object):
+    """Inheritance representation"""
+    
     def __init__(self, base, child, location=None):
         self.base = base
         self.child = child
@@ -119,6 +121,7 @@ class Inherit(object):
 
 
 class Location(object):
+    """Location in the source code"""
     def __init__(self, begin, end):
         self.line1, self.col1 = begin.split(':')
         self.line2, self.col2 = end.split(':')
