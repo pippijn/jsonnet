@@ -247,5 +247,19 @@ class Location:
         return loc_str
 
 
-class ObjectComprehensionSimple(AST):
-    pass
+class ObjectComprehension(AST):
+    def __init__(self, location, id_, field, value, array):
+        super().__init__(location)
+        self.id = id_
+        self.field = field
+        self.value = value
+        self.array = array
+
+    def __str__(self):
+        obj_comp_str = 'ObjectComprehension({id_}, {field}, {val}, {arr})'.format(
+            id_ = self.id,
+            field = self.field,
+            val = self.value,
+            arr = self.array
+        )
+        return obj_comp_str

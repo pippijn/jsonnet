@@ -292,6 +292,22 @@ std::ostream &operator<<(std::ostream &out, const LocationRange *lr)
     return out;
 }
 
+std::ostream &operator<<(std::ostream &out, const ObjectComprehensionSimple *ast)
+{
+    out << "ast.ObjectComprehension(";
+    out << &ast->location;
+    out << ",";
+    out << ast->id;
+    out << ",";
+    out << ast->field;
+    out << ",";
+    out << ast->value;
+    out << ",";
+    out << ast->array;
+    out << ")";
+    return out;
+}
+
 // keep empty cases for desugared nodes or just delete them ?
 std::ostream &operator<<(std::ostream &out, const AST *ast_)
 {
@@ -370,8 +386,8 @@ std::ostream &operator<<(std::ostream &out, const AST *ast_)
     } else if (dynamic_cast<const ObjectComprehension *>(ast_)) {
         // desugared to simple ObjectComprehension
 
-    } else if (dynamic_cast<const ObjectComprehensionSimple *>(ast_)) {
-        // not implemented yet
+    } else if (auto *ast = dynamic_cast<const ObjectComprehensionSimple *>(ast_)) {
+        out << ast;
 
     } else if (dynamic_cast<const Parens *>(ast_)) {
         // desugared

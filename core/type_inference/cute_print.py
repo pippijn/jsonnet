@@ -154,8 +154,16 @@ def to_str(ast_, indent, curr_indent):
         res = 'null'
         return res 
 
-    elif isinstance(ast_, ast.ObjectComprehensionSimple):
-        res = 'ObjectComprehention()'
+    elif isinstance(ast_, ast.ObjectComprehension):
+        res = 'ObjectComprehention(\n{ind}{loc},\n{ind}{id_},\n{ind}{field}\n,{ind}{val}\n,{ind}{arr}\n'.format(
+            ind = next_indent,
+            loc = to_str(ast_.location, indent, next_indent),
+            id_ = to_str(ast_.id, indent, next_indent),
+            field = to_str(ast_.field, indent, next_indent),
+            val = to_str(ast_.value, indent, next_indent),
+            arr = to_str(ast_.array, indent, next_indent)
+        )
+        res += f'{curr_indent})'
         return res 
 
     elif isinstance(ast_, ast.Self):

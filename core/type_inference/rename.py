@@ -72,7 +72,7 @@ def rename_local(ast_: ast.AST, name_env: dict):
     elif isinstance(ast_, ast.LiteralNull):
         return
 
-    elif isinstance(ast_, ast.ObjectComprehensionSimple):
+    elif isinstance(ast_, ast.ObjectComprehension):
         raise Exception('Not renamed yet!\n')
 
     elif isinstance(ast_, ast.Self):

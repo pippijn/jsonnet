@@ -92,7 +92,7 @@ def translate_to_lambda_ast(ast_: j_ast.AST, my_env):
     elif isinstance(ast_, j_ast.LiteralNull):
         return lam_ast.Identifier("null")
 
-    elif isinstance(ast_, j_ast.ObjectComprehensionSimple):
+    elif isinstance(ast_, j_ast.ObjectComprehension):
         raise Exception('Not translated yet!\n')
 
     elif isinstance(ast_, j_ast.Self):
