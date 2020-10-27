@@ -49,7 +49,6 @@ def analyse(node, env, non_generic=None):
         node: The root of the abstract syntax tree.
         env: The type environment is a mapping of expression identifier names
             to type assignments.
-            to type assignments.
         non_generic: A set of non-generic variables, or None
 
     Returns:
@@ -122,9 +121,15 @@ def analyse(node, env, non_generic=None):
         update_env_with_obj_type_info(node.base, new_env)
         right_row = analyse(node.child, new_env, non_generic)
 
-        # since we work with the copy of base class, we over-approximate it,
-        # and its field names can be used with different types within different objects
         result_type = l_type.TypeVariable()
+        """
+        type_copy is used as a temporary solution for not exatly correct implementation 
+        of rows unification. It prevents update of the base object's type with the 
+        fields of child object. 
+        But the side-effect of the type_copy is too harmful. Since we work with copy of
+        base object, we lose connection between the type of inheritance result and
+        the type of base object. 
+        """
         left_row_copy = type_copy(left_row)
         unify(left_row_copy, result_type, node.location)
         unify(right_row, result_type, node.location)
@@ -318,27 +323,40 @@ def occurs_in(t, types):
     return any(occurs_in_type(t, t2) for t2 in types)
 
 
-def update_env_with_obj_type_info(obj, env):
-    if isinstance(obj, l_ast.Identifier):
-        if obj.name not in env:
+def update_env_with_obj_type_info(base_obj, env):
+    """ 
+    This function is used during inheritance to update type env with fields of base 
+    object before child object will be analysed. It was a naive solution to cope 
+    with undefined_but_used fields (marked as '!') inside object. In particular, 
+    it works when type of base object is know during inheritance but some fields 
+    of child object are supposed to be defined in the base object (and they are). 
+    See `test_unrecognized_base_field` and `test_unrecognized_base_func_field` in 
+    type_inference_test.py.
+    
+    An alternative (and more universal solution) to this problem is to define
+    those undefined_but_used fields as `null` inside object. Then, we avoid 
+    'Undefined <field_name>' error.
+    """
+    if isinstance(base_obj, l_ast.Identifier):
+        if base_obj.name not in env:
             return
-        obj_type = prune(env[obj.name])
-        if isinstance(obj_type, l_type.TypeRowOperator):
-            fields = obj_type.fields
+        base_obj_type = prune(env[base_obj.name])
+        if isinstance(base_obj_type, l_type.TypeRowOperator):
+            fields = base_obj_type.fields
             for v, tp in fields.items():
                 env[v] = tp
-    elif isinstance(obj, l_ast.Apply):
-        if obj.fn.name not in env:
+    elif isinstance(base_obj, l_ast.Apply):
+        if base_obj.fn.name not in env:
             return
-        obj_type = prune(env[obj.fn.name])
-        if isinstance(obj_type, l_type.Function):
-            return_type = prune(obj_type.types[1])
+        base_obj_type = prune(env[base_obj.fn.name])
+        if isinstance(base_obj_type, l_type.Function):
+            return_type = prune(base_obj_type.types[1])
             if isinstance(return_type, l_type.TypeRowOperator):
                 fields = return_type.fields
                 for v, tp in fields.items():
                     env[v] = tp
     else:
-        raise Exception(f'Unexpected type of base: {obj.__class__.__name__}')
+        raise Exception(f'Unexpected type of base: {base_obj.__class__.__name__}')
 
 
 def try_exp(env, node):
