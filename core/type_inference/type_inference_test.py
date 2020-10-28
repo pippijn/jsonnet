@@ -237,7 +237,7 @@ class TestTypeInference(unittest.TestCase):
                 }
             }
         )"""
-        error_msg = "Undefined symbol x"
+        error_msg = "Undefined name `x`, line 4"
         self.assertEqual(infer.run(example), error_msg)
     
     def test_inherit_before_base_class_definition(self):

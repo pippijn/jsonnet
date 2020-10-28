@@ -64,7 +64,7 @@ def analyse(node, env, non_generic=None):
         non_generic = set()
 
     if isinstance(node, l_ast.Identifier):
-        result_type = get_type(node.name, env, non_generic)
+        result_type = get_type(node.name, env, non_generic, node.location)
         return result_type
     elif isinstance(node, l_ast.LiteralNumber):
         result_type = l_type.Number
@@ -137,7 +137,7 @@ def analyse(node, env, non_generic=None):
     assert 0, "Unhandled syntax node {0}".format(type(node))
 
 
-def get_type(name, env, non_generic):
+def get_type(name, env, non_generic, location):
     """Get the type of identifier name from the type environment env.
 
     Args:
@@ -146,13 +146,15 @@ def get_type(name, env, non_generic):
         non_generic: A set of non-generic TypeVariables
 
     Raises:
-        ParseError: Raised if name is an undefined symbol in the type
-            environment.
+        ParseError: Raised if name is undefined in the type environment.
     """
     if name in env:
         return fresh(env[name], non_generic)
     else:
-        raise ParseError("Undefined symbol {0}".format(name))
+        raise ParseError("Undefined name `{name}`, {loc}".format(
+            name = name, 
+            loc = location)
+        )
 
 
 def fresh(t, non_generic):
