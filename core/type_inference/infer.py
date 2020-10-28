@@ -3,6 +3,7 @@ import argparse
 
 import hm_algo
 import jsonnet_ast as ast
+import cute_print
 from lambda_types import TypeVariable, Function
 from translate_jsonnet_to_lambda import translate_to_lambda_ast
 from rename import rename_local
@@ -37,19 +38,19 @@ def run(jsonnet_program, rebuild=False):
     print(jsonnet_program)
 
     jsonnet_ast_str = get_jsonnet_ast_str(jsonnet_program, rebuild)
-    print(f"\nAST:\n{jsonnet_ast_str}")
-
     jsonnet_ast = parse_ast(jsonnet_ast_str)
-    print(jsonnet_ast)
+
+    print("\n----Jsonnet AST----")
+    cute_print.cute_print(jsonnet_ast, indent='    ')
 
     name_env = {'std': 'std'}
     rename_local(jsonnet_ast, name_env)
-    print(f"\nRenamed AST:\n{jsonnet_ast}")
 
     env = create_init_env()
     lambda_ast = translate_to_lambda_ast(jsonnet_ast, env)
-    print(f"\nLambda AST:\n{lambda_ast}")
+    print(f"\n----Lambda AST----\n{lambda_ast}")
 
+    print("\n----Type inference result----")
     return hm_algo.try_exp(env, lambda_ast)
 
 
