@@ -47,7 +47,7 @@ class TestTypeInference(unittest.TestCase):
                 },
             }
         )"""
-        error_msg = "Type mismatch: string != number, lines 6-8, field 'name'"
+        error_msg = "InferenceError:  Type mismatch: string != number, lines 6-8, field 'name'"
         self.assertEqual(infer.run(example), error_msg)
 
     def test_mutual_recursion(self):
@@ -91,7 +91,7 @@ class TestTypeInference(unittest.TestCase):
                 z: self.x + self.y
             }
         )"""
-        error_msg = "Type mismatch: boolean != number, line 5"
+        error_msg = "InferenceError:  Type mismatch: boolean != number, line 5"
         self.assertEqual(infer.run(example), error_msg)
 
     def test_if_inheritance_changes_base_obj(self):
@@ -122,7 +122,7 @@ class TestTypeInference(unittest.TestCase):
                 res: f({ z: null }) 
             }
         )"""
-        error_msg = "Type mismatch: string != number"
+        error_msg = "InferenceError:  Type mismatch: string != number"
         self.assertEqual(infer.run(example), error_msg)
 
     def test_inherit_base_twice(self):
@@ -155,7 +155,7 @@ class TestTypeInference(unittest.TestCase):
                 } 
             }
         )"""
-        error_msg = "Type mismatch: string != number"
+        error_msg = "InferenceError:  Type mismatch: string != number"
         self.assertEqual(infer.run(example), error_msg)
 
     def test_inherit_base_twice_with_null_field(self):
@@ -237,7 +237,7 @@ class TestTypeInference(unittest.TestCase):
                 }
             }
         )"""
-        error_msg = "Undefined name `x`, line 4"
+        error_msg = "ParseError:  Undefined name `x`, line 4"
         self.assertEqual(infer.run(example), error_msg)
     
     def test_inherit_before_base_class_definition(self):

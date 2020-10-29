@@ -6,32 +6,8 @@
 from __future__ import print_function
 import lambda_ast as l_ast
 import lambda_types as l_type
+import error
 
-# ----------------------------------------------------------------
-# Exception types
-
-class InferenceError(Exception):
-    """Raised if the type inference algorithm cannot infer types successfully"""
-
-    def __init__(self, message):
-        self.__message = message
-
-    message = property(lambda self: self.__message)
-
-    def __str__(self):
-        return str(self.message)
-
-
-class ParseError(Exception):
-    """Raised if the type environment supplied for is incomplete"""
-
-    def __init__(self, message):
-        self.__message = message
-
-    message = property(lambda self: self.__message)
-
-    def __str__(self):
-        return str(self.message)
 
 # ----------------------------------------------------------------
 # Type inference machinery
@@ -148,10 +124,11 @@ def get_type(name, env, non_generic, location):
     Raises:
         ParseError: Raised if name is undefined in the type environment.
     """
+
     if name in env:
         return fresh(env[name], non_generic)
     else:
-        raise ParseError("Undefined name `{name}`, {loc}".format(
+        raise error.ParseError("Undefined name `{name}`, {loc}".format(
             name = name, 
             loc = location)
         )
@@ -167,6 +144,7 @@ def fresh(t, non_generic):
         t: A type to be copied.
         non_generic: A set of non-generic TypeVariables
     """
+
     mappings = {}  # A mapping of TypeVariables to TypeVariables
 
     def freshrec(tp):
@@ -217,12 +195,13 @@ def unify(t1, t2, loc=None, field_name=None):
     Raises:
         InferenceError: Raised if the types cannot be unified.
     """
+
     a = prune(t1)
     b = prune(t2)
     if isinstance(a, l_type.TypeVariable):
         if a != b:
             if occurs_in_type(a, b):
-                raise InferenceError("recursive unification")
+                raise error.InferenceError("recursive unification")
             a.instance = b
     elif (isinstance(a, l_type.TypeOperator) or isinstance(a, l_type.TypeRowOperator)) and isinstance(b, l_type.TypeVariable):
         unify(b, a, loc)
@@ -232,7 +211,7 @@ def unify(t1, t2, loc=None, field_name=None):
                 str(a), str(b), loc)
             if field_name:
                 err_msg += f", field '{field_name}'"
-            raise InferenceError(err_msg)
+            raise error.InferenceError(err_msg)
         for p, q in zip(a.types, b.types):
             unify(p, q, loc)
     elif isinstance(a, l_type.TypeRowOperator) and isinstance(b, l_type.TypeRowOperator):
@@ -264,6 +243,7 @@ def prune(t):
     Returns:
         An uninstantiated TypeVariable or a TypeOperator
     """
+
     if isinstance(t, l_type.TypeVariable):
         if t.instance is not None:
             t.instance = prune(t.instance)
@@ -287,6 +267,7 @@ def is_generic(v, non_generic):
     Returns:
         True if v is a generic variable, otherwise False
     """
+
     return not occurs_in(v, non_generic)
 
 
@@ -322,6 +303,7 @@ def occurs_in(t, types):
     Returns:
         True if t occurs in any of types, otherwise False
     """
+
     return any(occurs_in_type(t, t2) for t2 in types)
 
 
@@ -339,6 +321,7 @@ def update_env_with_obj_type_info(base_obj, env):
     those undefined_but_used fields as `null` inside object. Then, we avoid 
     'Undefined <field_name>' error.
     """
+    
     if isinstance(base_obj, l_ast.Identifier):
         if base_obj.name not in env:
             return
@@ -376,6 +359,6 @@ def try_exp(env, node):
             t = analyse(node, env)
             print(str(t))
             return str(t)
-    except (ParseError, InferenceError) as e:
+    except (error.ParseError, error.InferenceError) as e:
         print(e)
         return str(e)

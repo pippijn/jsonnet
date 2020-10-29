@@ -1,4 +1,5 @@
 import jsonnet_ast as ast
+import error
 
 def rename_local(ast_: ast.AST, name_env: dict):
     if isinstance(ast_, ast.Object):
@@ -86,7 +87,7 @@ def rename_local(ast_: ast.AST, name_env: dict):
 
     elif isinstance(ast_, ast.Var):
         if ast_.id not in name_env:
-            raise Exception(f"Local {ast_.id} is not defined")
+            raise error.ParseError(f"Local variable `{ast_.id}` is not defined, {ast_.location}")
         ast_.id = name_env[ast_.id]
 
     else:

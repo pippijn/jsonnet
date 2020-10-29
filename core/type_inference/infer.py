@@ -4,7 +4,8 @@ import argparse
 import hm_algo
 import jsonnet_ast as ast
 import cute_print
-from lambda_types import TypeVariable, Function
+import error
+from lambda_types import TypeVariable, Function, context
 from translate_jsonnet_to_lambda import translate_to_lambda_ast
 from rename import rename_local
 
@@ -35,23 +36,30 @@ def create_init_env():
 
 
 def run(jsonnet_program, rebuild=False):
-    print(jsonnet_program)
+    try:
+        print(jsonnet_program)
 
-    jsonnet_ast_str = get_jsonnet_ast_str(jsonnet_program, rebuild)
-    jsonnet_ast = parse_ast(jsonnet_ast_str)
+        jsonnet_ast_str = get_jsonnet_ast_str(jsonnet_program, rebuild)
+        jsonnet_ast = parse_ast(jsonnet_ast_str)
 
-    print("\n----Jsonnet AST----")
-    cute_print.cute_print(jsonnet_ast, indent='    ')
+        print("\n----Jsonnet AST----")
+        cute_print.cute_print(jsonnet_ast, indent='    ')
 
-    name_env = {'std': 'std'}
-    rename_local(jsonnet_ast, name_env)
+        name_env = {'std': 'std'}
+        rename_local(jsonnet_ast, name_env)
 
-    env = create_init_env()
-    lambda_ast = translate_to_lambda_ast(jsonnet_ast, env)
-    print(f"\n----Lambda AST----\n{lambda_ast}")
+        env = create_init_env()
+        lambda_ast = translate_to_lambda_ast(jsonnet_ast, env)
+        print(f"\n----Lambda AST----\n{lambda_ast}")
 
-    print("\n----Type inference result----")
-    return hm_algo.try_exp(env, lambda_ast)
+        with context():
+            t = hm_algo.analyse(lambda_ast, env)
+            print(f"\n----Inferred type----\n{t}")
+            return str(t)
+
+    except (error.ParseError, error.InferenceError) as e:
+        print(f'\n{e}')
+        return str(e)
 
 
 def read_file(file_name):
